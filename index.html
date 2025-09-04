@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garage Sale Admin | City of Portland, Texas</title>
+
+    <!-- SEO and Government Meta Tags -->
+    <meta name="description" content="Official garage sale location management system for City of Portland, Texas">
+    <meta name="keywords" content="Portland Texas, garage sales, city administration, permit management">
+    <meta name="author" content="City of Portland, Texas">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Government Site Security -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net;
+        style-src 'self' 'unsafe-inline' https://unpkg.com;
+        connect-src 'self' https://*.arcgis.com https://*.esri.com https://services3.arcgis.com https://geocode-api.arcgis.com;
+        img-src 'self' data: https: blob:;
+        font-src 'self' https: data:;
+        frame-src 'none';
+    ">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta name="referrer" content="no-referrer">
+
+    <!-- Icons and Branding -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- App Configuration -->
+    <script src="config.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Skip Navigation for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Header -->
+    <header class="appbar glass" role="banner">
+        <div class="brand">
+            <div class="logo" role="img" aria-label="Garage Sale Admin Logo">🏷️</div>
+            <h1>Garage Sale Admin</h1>
+            <div class="org-badge">
+                <span class="org-name">City of Portland</span>
+                <span class="org-state">Texas</span>
+            </div>
+        </div>
+
+        <nav class="actions" role="navigation" aria-label="Main navigation">
+            <div class="app-controls">
+                <label for="selFilter" class="sr-only">Filter garage sales</label>
+                <select id="selFilter" class="btn btn-secondary" aria-label="Filter garage sales by time period">
+                    <option value="all">All sales</option>
+                    <option value="weekend">This weekend</option>
+                    <option value="next14">Next 2 weeks</option>
+                    <option value="past">Past sales</option>
+                </select>
+
+                <button id="btnExport" class="btn btn-secondary" aria-label="Export garage sale data">
+                    📊 Export
+                </button>
+
+                <button id="btnPrint" class="btn btn-secondary" aria-label="Print garage sale report">
+                    🖨️ Print
+                </button>
+
+                <button id="btnSales" class="btn btn-secondary" aria-label="View garage sales list">
+                    📋 List
+                </button>
+
+                <button id="btnTheme" class="btn btn-secondary" aria-label="Toggle dark/light theme">
+                    🌓 Theme
+                </button>
+
+                <button id="btnGuide" class="btn btn-secondary" aria-label="Show user guide">
+                    ❓ Help
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content" class="layout" role="main">
+        <!-- Left Panel: Form -->
+        <section class="panel form-panel glass" role="form" aria-labelledby="form-title">
+            <h2 id="form-title" class="section-title">Garage Sale Editor</h2>
+
+            <!-- Quick Stats -->
+            <div class="stats-bar" role="status" aria-live="polite">
+                <div class="stat">
+                    <span class="stat-label">Total Sales:</span>
+                    <span id="totalSales" class="stat-value">--</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">This Weekend:</span>
+                    <span id="weekendSales" class="stat-value">--</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Status:</span>
+                    <span id="connectionStatus" class="stat-value">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Address Search -->
+            <div class="field-row">
+                <label for="addressSearch">🔍 Search Address</label>
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="addressSearch" 
+                        placeholder="Enter address to search and zoom (e.g., 123 Main St, Portland, TX)"
+                        aria-describedby="search-help"
+                        autocomplete="street-address"
+                    >
+                    <button id="btnSearch" class="btn-search" type="button" aria-label="Search for address">
+                        🔍
+                    </button>
+                </div>
+                <div id="search-help" class="field-hint">
+                    Type any address in Portland, TX to zoom to that location
+                </div>
+            </div>
+
+            <!-- Form Fields -->
+            <div class="field-row">
+                <label for="address">📍 Garage Sale Address <span class="required">*</span></label>
+                <input 
+                    type="text" 
+                    id="address" 
+                    placeholder="123 Main St, Portland, TX"
+                    required
+                    autocomplete="street-address"
+                    aria-describedby="address-help"
+                >
+                <div id="address-help" class="field-hint">
+                    Full street address where the garage sale will be held
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="field-row">
+                    <label for="dateStart">📅 Start Date <span class="required">*</span></label>
+                    <input type="date" id="dateStart" required aria-describedby="start-date-help">
+                    <div id="start-date-help" class="field-hint">When the sale begins</div>
+                </div>
+                <div class="field-row">
+                    <label for="dateEnd">📅 End Date</label>
+                    <input type="date" id="dateEnd" aria-describedby="end-date-help">
+                    <div id="end-date-help" class="field-hint">Optional: When the sale ends (if multi-day)</div>
+                </div>
+            </div>
+
+            <!-- Multi-Day Sale Feature -->
+            <fieldset class="checkbox-fieldset">
+                <legend class="sr-only">Sale timing options</legend>
+                <div class="checkbox">
+                    <input type="checkbox" id="chkMultiDay" aria-describedby="multi-day-help">
+                    <label for="chkMultiDay">🗓️ Multi-day sale with different times</label>
+                </div>
+                <div id="multi-day-help" class="field-hint">
+                    Check this if your sale runs multiple days with different hours each day
+                </div>
+            </fieldset>
+
+            <!-- Single Day Time Range -->
+            <div id="single-day-times" class="field-row">
+                <fieldset>
+                    <legend>⏰ Sale Hours</legend>
+                    <div class="time-container">
+                        <div class="time-row">
+                            <div class="time-group">
+                                <label for="timeStartHour" class="sr-only">Start hour</label>
+                                <label for="timeStartMin" class="sr-only">Start minute</label>
+                                <label for="timeStartAmPm" class="sr-only">Start AM/PM</label>
+                                <span class="time-label">Start:</span>
+                                <select id="timeStartHour" aria-label="Start hour">
+                                    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                                    <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                                    <option value="7" selected>7</option><option value="8">8</option><option value="9">9</option>
+                                    <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                                </select>
+                                <span>:</span>
+                                <select id="timeStartMin" aria-label="Start minute">
+                                    <option value="0" selected>00</option><option value="15">15</option>
+                                    <option value="30">30</option><option value="45">45</option>
+                                </select>
+                                <select id="timeStartAmPm" aria-label="Start AM or PM">
+                                    <option value="AM" selected>AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </div>
+
+                            <span class="time-separator" aria-hidden="true">to</span>
+
+                            <div class="time-group">
+                                <label for="timeEndHour" class="sr-only">End hour</label>
+                                <label for="timeEndMin" class="sr-only">End minute</label>
+                                <label for="timeEndAmPm" class="sr-only">End AM/PM</label>
+                                <span class="time-label">End:</span>
+                                <select id="timeEndHour" aria-label="End hour">
+                                    <option value="1">1</option><option value="2" selected>2</option><option value="3">3</option>
+                                    <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                                    <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                                    <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                                </select>
+                                <span>:</span>
+                                <select id="timeEndMin" aria-label="End minute">
+                                    <option value="0" selected>00</option><option value="15">15</option>
+                                    <option value="30">30</option><option value="45">45</option>
+                                </select>
+                                <select id="timeEndAmPm" aria-label="End AM or PM">
+                                    <option value="AM">AM</option>
+                                    <option value="PM" selected>PM</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+
+            <!-- Multi-Day Times (Hidden by default) -->
+            <div id="multi-day-times" class="field-row" style="display:none;">
+                <fieldset>
+                    <legend>📅 Sale Days & Times</legend>
+                    <div id="multi-day-container" role="group" aria-label="Multi-day sale schedule"></div>
+                    <button id="btnAddDay" class="btn btn-secondary btn-small" type="button">
+                        ➕ Add Day
+                    </button>
+                </fieldset>
+            </div>
+
+            <div class="field-row">
+                <label for="details">🛍️ Items for Sale</label>
+                <input 
+                    type="text" 
+                    id="details" 
+                    placeholder="Books, clothes, furniture, household items, etc."
+                    aria-describedby="details-help"
+                >
+                <div id="details-help" class="field-hint">
+                    List the types of items that will be sold (optional but recommended)
+                </div>
+            </div>
+
+            <div class="field-row">
+                <label for="descriptionPreview">📝 Description Preview</label>
+                <textarea 
+                    id="descriptionPreview" 
+                    readonly 
+                    class="description-preview"
+                    aria-describedby="preview-help"
+                    rows="3"
+                ></textarea>
+                <div id="preview-help" class="field-hint">
+                    Auto-generated description that will be saved with your garage sale
+                </div>
+            </div>
+
+            <div class="form-actions" role="group" aria-label="Form actions">
+                <button id="btnSave" class="btn btn-primary" type="button">
+                    💾 Save Sale
+                </button>
+                <button id="btnNew" class="btn btn-secondary" type="button">
+                    ➕ New Sale
+                </button>
+                <button id="btnDelete" class="btn btn-danger" type="button">
+                    🗑️ Delete
+                </button>
+                <div class="spacer" aria-hidden="true"></div>
+                <button id="btnCancel" class="btn btn-secondary" style="display:none;" type="button">
+                    ❌ Cancel
+                </button>
+            </div>
+
+            <div class="status" id="status" role="status" aria-live="polite">
+                Ready to manage garage sales. Click "New Sale" to add a location, or click existing sales on the map to edit.
+            </div>
+        </section>
+
+        <!-- Right Panel: Map -->
+        <section class="panel map-panel glass" role="complementary" aria-labelledby="map-title">
+            <h2 id="map-title" class="sr-only">Interactive Map of Garage Sales</h2>
+            <div id="map" class="map" role="img" aria-label="Interactive map showing garage sale locations in Portland, Texas"></div>
+
+            <footer class="map-footer">
+                <div id="modeChip" class="mode-chip" style="display:none;" role="status" aria-live="polite">
+                    ✨ Click map to place garage sale
+                </div>
+                <div class="map-info">
+                    <span id="coordinates" aria-label="Current coordinates">Ready</span>
+                    <span class="map-hint">💡 Use address search to zoom to locations</span>
+                </div>
+            </footer>
+        </section>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display:none;" aria-hidden="true">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading garage sales...</div>
+        </div>
+    </div>
+
+    <!-- Print Styles -->
+    <style media="print">
+        @page { margin: 0.5in; }
+        .appbar, .map-footer, .form-actions { display: none !important; }
+        .layout { display: block !important; }
+        .map { height: 400px !important; }
+        body { font-size: 12pt; color: black; background: white; }
+    </style>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Main Application -->
+    <script src="app.js"></script>
+
+    <!-- Service Worker for Offline Functionality -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(function(registration) {
+                console.log('SW registered successfully');
+            }).catch(function(registrationError) {
+                console.log('SW registration failed');
+            });
+        }
+    </script>
+</body>
+</html>

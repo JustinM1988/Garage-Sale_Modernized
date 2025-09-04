@@ -1,0 +1,13 @@
+# City of Portland, TX - Garage Sale Admin
+# Government application - internal use
+
+User-agent: *
+Disallow: /
+Allow: /.well-known/
+
+# Security
+User-agent: *
+Crawl-delay: 10
+
+# Contact
+# Contact: justin.mcintyre@portlandtx.gov
