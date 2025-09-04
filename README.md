@@ -1,1 +1,0 @@
-# Garage-Sale_Modernized
