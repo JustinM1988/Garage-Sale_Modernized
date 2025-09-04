@@ -1,0 +1,28 @@
+# Security Policy
+
+## Supported Versions
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 8.0.x   | :white_check_mark: |
+| < 8.0   | :x:                |
+
+## Reporting a Vulnerability
+
+Please report security vulnerabilities to justin.mcintyre@portlandtx.gov
+
+**Do not report security vulnerabilities through public GitHub issues.**
+
+### Response Timeline
+- Initial response: 24 hours
+- Assessment: 72 hours  
+- Resolution: Based on severity
+
+### What to Include
+1. Description of the vulnerability
+2. Steps to reproduce
+3. Potential impact
+4. Suggested remediation (if known)
+
+Contact: City of Portland, Texas
+Email: justin.mcintyre@portlandtx.gov
