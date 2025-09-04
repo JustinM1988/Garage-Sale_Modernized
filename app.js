@@ -1,5 +1,5 @@
-// app.js — ULTIMATE Enhanced Garage Sale Admin v8.0
-// City of Portland, Texas - ALL ISSUES FIXED + ADDRESS AUTOCOMPLETE + BUILDING FOOTPRINTS
+// app.js — MODERN STYLISH Garage Sale Admin v8.0
+// City of Portland, Texas - Premium Modern Design
 
 /* ================ Wait for DOM and Dependencies ================ */
 document.addEventListener('DOMContentLoaded', function() {
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    console.log('🚀 Starting Ultimate Garage Sale Admin...');
+    console.log('🚀 Starting Modern Stylish Garage Sale Admin...');
     init();
 });
 
@@ -34,51 +34,93 @@ let garageSalesData = [];
 let isOnline = navigator.onLine;
 let addressSuggestions = [];
 let suggestionsDropdown = null;
+let multiDayData = [];
 
-/* ================ Utility Functions ================ */
+/* ================ Modern UI Utilities ================ */
 const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => document.querySelectorAll(sel);
 
 function showError(message) {
     const errorDiv = document.createElement('div');
     errorDiv.style.cssText = `
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.8); display: flex; align-items: center;
-        justify-content: center; z-index: 9999; color: white; text-align: center;
+        position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
+        display: flex; align-items: center; justify-content: center; 
+        z-index: 9999; backdrop-filter: blur(8px);
     `;
     errorDiv.innerHTML = `
-        <div>
-            <h3>⚠️ Error</h3>
-            <p>${message}</p>
-            <button onclick="window.location.reload()" style="padding: 10px 20px; margin-top: 10px;">Refresh Page</button>
+        <div style="
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border-radius: 20px; padding: 40px; text-align: center;
+            color: white; max-width: 400px; border: 1px solid #3cf0d4;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        ">
+            <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+            <h3 style="margin: 0 0 15px 0; font-size: 24px;">System Error</h3>
+            <p style="margin: 0 0 25px 0; opacity: 0.9;">${message}</p>
+            <button onclick="window.location.reload()" style="
+                padding: 12px 24px; background: #3cf0d4; color: #041311;
+                border: none; border-radius: 10px; cursor: pointer;
+                font-weight: 600; font-size: 16px;
+            ">Refresh Page</button>
         </div>
     `;
     document.body.appendChild(errorDiv);
 }
 
-function toast(msg, type = "info", duration = 4000) {
-    console.log(`📢 Toast [${type.toUpperCase()}]: ${msg}`);
+function showModernToast(msg, type = "info", duration = 4000) {
+    console.log(`📢 [${type.toUpperCase()}]: ${msg}`);
 
-    const el = document.createElement("div");
-    el.className = `toast toast-${type}`;
-    el.textContent = msg;
-    el.style.cssText = `
-        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-        padding: 12px 24px; border-radius: 8px; font-weight: 600;
-        z-index: 1000; backdrop-filter: blur(8px); color: white;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#3b82f6'};
+    // Don't show technical messages
+    if (msg.includes('footprints') || msg.includes('Enhanced') || msg.includes('ready to use')) {
+        return;
+    }
+
+    const colors = {
+        success: { bg: '#10b981', icon: '✅' },
+        error: { bg: '#ef4444', icon: '❌' },
+        warning: { bg: '#f59e0b', icon: '⚠️' },
+        info: { bg: '#3b82f6', icon: 'ℹ️' }
+    };
+
+    const color = colors[type] || colors.info;
+
+    const toast = document.createElement("div");
+    toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 18px;">${color.icon}</span>
+            <span style="flex: 1;">${msg}</span>
+        </div>
+    `;
+    toast.style.cssText = `
+        position: fixed; bottom: 30px; right: 30px; z-index: 1000;
+        background: ${color.bg}; color: white; padding: 16px 20px;
+        border-radius: 12px; font-weight: 500; font-size: 15px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        backdrop-filter: blur(8px); max-width: 400px;
+        transform: translateX(100%); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     `;
 
-    document.body.appendChild(el);
-    setTimeout(() => { if (el.parentNode) el.remove(); }, duration);
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.style.transform = 'translateX(0)';
+    }, 100);
+
+    // Animate out
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentNode) toast.remove();
+        }, 400);
+    }, duration);
 }
 
-function setStatus(text, type = 'info') {
+function setModernStatus(text, type = 'info') {
     console.log(`📊 Status [${type.toUpperCase()}]: ${text}`);
     const el = $("#status");
     if (el) {
         el.textContent = text;
-        el.className = `status ${type}`;
+        el.className = `modern-status modern-status-${type}`;
     }
     updateConnectionStatus();
 }
@@ -86,12 +128,14 @@ function setStatus(text, type = 'info') {
 function updateConnectionStatus() {
     const statusEl = $("#connectionStatus");
     if (statusEl) {
-        statusEl.textContent = isOnline ? "Connected" : "Offline";
-        statusEl.className = isOnline ? "stat-value online" : "stat-value offline";
+        statusEl.innerHTML = isOnline ? 
+            '<span class="status-dot online"></span>Connected' :
+            '<span class="status-dot offline"></span>Offline';
+        statusEl.className = isOnline ? "connection-status online" : "connection-status offline";
     }
 }
 
-// Data conversion utilities
+// Data utilities
 function toEpochMaybe(v) {
     if (v == null || v === "") return null;
     if (typeof v === "number") return v;
@@ -109,19 +153,37 @@ function fromEpoch(ms) {
     return `${Y}-${M}-${D}`;
 }
 
+/* ================ Enhanced Description with Multi-Day Support ================ */
 function composeDescription() {
     const details = $("#details")?.value?.trim() || "";
-    const sH = parseInt($("#timeStartHour")?.value || "7");
-    const sM = parseInt($("#timeStartMin")?.value || "0");
-    const sAP = $("#timeStartAmPm")?.value || "AM";
-    const eH = parseInt($("#timeEndHour")?.value || "2");
-    const eM = parseInt($("#timeEndMin")?.value || "0");
-    const eAP = $("#timeEndAmPm")?.value || "PM";
 
-    const startTime = `${sH}:${String(sM).padStart(2,"0")} ${sAP}`;
-    const endTime = `${eH}:${String(eM).padStart(2,"0")} ${eAP}`;
-    const timeStr = `${startTime} - ${endTime}`;
-    return details ? `${timeStr}: ${details}` : timeStr;
+    if ($("#chkMultiDay")?.checked && multiDayData.length > 0) {
+        const dayStrings = multiDayData.map(day => {
+            const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+            const dayName = dayNames[day.dayOfWeek];
+            const startTime = formatTime(day.startHour, day.startMin, day.startAmPm);
+            const endTime = formatTime(day.endHour, day.endMin, day.endAmPm);
+            return `${dayName} ${startTime} - ${endTime}`;
+        });
+        const timeStr = dayStrings.join(' & ');
+        return details ? `${timeStr}: ${details}` : timeStr;
+    } else {
+        const sH = parseInt($("#timeStartHour")?.value || "7");
+        const sM = parseInt($("#timeStartMin")?.value || "0");
+        const sAP = $("#timeStartAmPm")?.value || "AM";
+        const eH = parseInt($("#timeEndHour")?.value || "2");
+        const eM = parseInt($("#timeEndMin")?.value || "0");
+        const eAP = $("#timeEndAmPm")?.value || "PM";
+
+        const startTime = formatTime(sH, sM, sAP);
+        const endTime = formatTime(eH, eM, eAP);
+        const timeStr = `${startTime} - ${endTime}`;
+        return details ? `${timeStr}: ${details}` : timeStr;
+    }
+}
+
+function formatTime(hour, minute, ampm) {
+    return `${hour}:${String(minute).padStart(2,"0")} ${ampm}`;
 }
 
 function updateDescriptionPreview() {
@@ -129,34 +191,344 @@ function updateDescriptionPreview() {
     if (preview) preview.value = composeDescription();
 }
 
-/* ================ Enhanced Address Autocomplete System ================ */
+/* ================ Sale Templates with Modern Design ================ */
+const saleTemplates = {
+    'Moving Sale': {
+        description: 'Moving sale - everything must go! Furniture, appliances, household items',
+        time: { start: 7, startAmPm: 'AM', end: 4, endAmPm: 'PM' },
+        icon: '📦'
+    },
+    'Estate Sale': {
+        description: 'Estate sale - antiques, collectibles, furniture, and more',
+        time: { start: 8, startAmPm: 'AM', end: 3, endAmPm: 'PM' },
+        icon: '🏛️'
+    },
+    'Neighborhood Sale': {
+        description: 'Multi-family garage sale - clothes, toys, books, household items',
+        time: { start: 7, startAmPm: 'AM', end: 2, endAmPm: 'PM' },
+        icon: '🏘️'
+    },
+    'Holiday Sale': {
+        description: 'Holiday items, decorations, seasonal clothing and accessories',
+        time: { start: 8, startAmPm: 'AM', end: 3, endAmPm: 'PM' },
+        icon: '🎄'
+    }
+};
+
+function showTemplateSelector() {
+    const modal = document.createElement("div");
+    modal.className = "template-modal-backdrop";
+    modal.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 10000; backdrop-filter: blur(8px);
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border-radius: 20px; padding: 30px; max-width: 600px; width: 90%;
+            color: white; border: 1px solid #3cf0d4;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        ">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h3 style="margin: 0; font-size: 28px; color: #3cf0d4;">📝 Choose a Template</h3>
+                <p style="margin: 10px 0 0 0; opacity: 0.8;">Quick start with common garage sale types</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                ${Object.entries(saleTemplates).map(([name, template]) => `
+                    <div class="template-card" style="
+                        background: rgba(60,240,212,0.1);
+                        border: 1px solid rgba(60,240,212,0.3);
+                        border-radius: 16px; padding: 20px; cursor: pointer;
+                        transition: all 0.3s ease; text-align: center;
+                    " onclick="applySaleTemplate('${name}'); closeTemplateModal();">
+                        <div style="font-size: 48px; margin-bottom: 15px;">${template.icon}</div>
+                        <h4 style="margin: 0 0 10px 0; color: #3cf0d4; font-size: 18px;">${name}</h4>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9; line-height: 1.4;">${template.description}</p>
+                        <div style="margin-top: 15px; padding: 8px 16px; background: rgba(60,240,212,0.2); border-radius: 8px; font-size: 12px; font-weight: 600;">
+                            ${template.time.start}:00 ${template.time.startAmPm} - ${template.time.end}:00 ${template.time.endAmPm}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button onclick="closeTemplateModal()" style="
+                    padding: 12px 24px; background: transparent; color: #94a3b8;
+                    border: 1px solid #475569; border-radius: 10px; cursor: pointer;
+                    font-weight: 500; transition: all 0.3s ease;
+                ">Skip Templates</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Add hover effects
+    modal.querySelectorAll('.template-card').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-4px)';
+            card.style.background = 'rgba(60,240,212,0.2)';
+            card.style.borderColor = '#3cf0d4';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0)';
+            card.style.background = 'rgba(60,240,212,0.1)';
+            card.style.borderColor = 'rgba(60,240,212,0.3)';
+        });
+    });
+
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeTemplateModal();
+    });
+
+    window.currentTemplateModal = modal;
+}
+
+function closeTemplateModal() {
+    if (window.currentTemplateModal) {
+        document.body.removeChild(window.currentTemplateModal);
+        window.currentTemplateModal = null;
+    }
+}
+
+function applySaleTemplate(templateName) {
+    const template = saleTemplates[templateName];
+    if (!template) return;
+
+    $("#details").value = template.description;
+    $("#timeStartHour").value = template.time.start;
+    $("#timeStartAmPm").value = template.time.startAmPm;
+    $("#timeEndHour").value = template.time.end;
+    $("#timeEndAmPm").value = template.time.endAmPm;
+
+    updateDescriptionPreview();
+    showModernToast(`${template.icon} Applied ${templateName} template`, "success");
+}
+
+/* ================ Multi-Day Sales Functionality ================ */
+function setupMultiDayFeature() {
+    const checkbox = $("#chkMultiDay");
+    const singleDayTimes = $("#single-day-times");
+    const multiDayTimes = $("#multi-day-times");
+
+    if (!checkbox || !singleDayTimes || !multiDayTimes) {
+        console.warn("⚠️ Multi-day elements not found");
+        return;
+    }
+
+    checkbox.addEventListener('change', function() {
+        if (this.checked) {
+            singleDayTimes.style.display = 'none';
+            multiDayTimes.style.display = 'block';
+
+            if (multiDayData.length === 0) {
+                const startDate = $("#dateStart").value;
+                if (startDate) {
+                    const dayOfWeek = new Date(startDate).getDay();
+                    addMultiDayEntry(dayOfWeek);
+                }
+            }
+        } else {
+            singleDayTimes.style.display = 'block';
+            multiDayTimes.style.display = 'none';
+        }
+        updateDescriptionPreview();
+    });
+
+    const btnAddDay = $("#btnAddDay");
+    if (btnAddDay) {
+        btnAddDay.addEventListener('click', function() {
+            const lastDay = multiDayData.length > 0 ? 
+                multiDayData[multiDayData.length - 1].dayOfWeek : 
+                new Date().getDay();
+            const nextDay = (lastDay + 1) % 7;
+            addMultiDayEntry(nextDay);
+        });
+    }
+
+    console.log("✅ Multi-day sales feature initialized");
+}
+
+function addMultiDayEntry(dayOfWeek = 0) {
+    const container = $("#multi-day-container");
+    if (!container) return;
+
+    const entry = {
+        id: Date.now(),
+        dayOfWeek: dayOfWeek,
+        startHour: 7,
+        startMin: 0,
+        startAmPm: 'AM',
+        endHour: 2,
+        endMin: 0,
+        endAmPm: 'PM'
+    };
+
+    multiDayData.push(entry);
+    renderMultiDayEntries();
+    updateDescriptionPreview();
+}
+
+function renderMultiDayEntries() {
+    const container = $("#multi-day-container");
+    if (!container) return;
+
+    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+    container.innerHTML = multiDayData.map((entry, index) => `
+        <div class="modern-multi-day-entry" data-id="${entry.id}" style="
+            background: rgba(60,240,212,0.05);
+            border: 1px solid rgba(60,240,212,0.2); 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        ">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="
+                        background: #3cf0d4; color: #041311; 
+                        width: 32px; height: 32px; border-radius: 50%;
+                        display: flex; align-items: center; justify-content: center;
+                        font-weight: 700; font-size: 14px;
+                    ">${index + 1}</span>
+                    <span style="font-weight: 600; color: #3cf0d4; font-size: 16px;">Sale Day ${index + 1}</span>
+                </div>
+                <button onclick="removeMultiDayEntry('${entry.id}')" style="
+                    background: linear-gradient(135deg, #ef4444, #dc2626);
+                    color: white; border: none; border-radius: 8px;
+                    width: 32px; height: 32px; cursor: pointer;
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 16px; transition: all 0.3s ease;
+                ">×</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 120px 1fr; gap: 20px; align-items: center;">
+                <select onchange="updateMultiDayEntry('${entry.id}', 'dayOfWeek', this.value)" style="
+                    padding: 12px; border: 1px solid rgba(60,240,212,0.3);
+                    border-radius: 8px; background: rgba(60,240,212,0.05);
+                    color: inherit; font-size: 14px;
+                ">
+                    ${dayNames.map((day, i) => `
+                        <option value="${i}" ${entry.dayOfWeek === i ? 'selected' : ''}>${day}</option>
+                    `).join('')}
+                </select>
+
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <select onchange="updateMultiDayEntry('${entry.id}', 'startHour', this.value)" style="
+                            padding: 8px; border: 1px solid rgba(60,240,212,0.3);
+                            border-radius: 6px; background: rgba(60,240,212,0.05);
+                            color: inherit; min-width: 60px;
+                        ">
+                            ${Array.from({length: 12}, (_, i) => i + 1).map(h => `
+                                <option value="${h}" ${entry.startHour === h ? 'selected' : ''}>${h}</option>
+                            `).join('')}
+                        </select>
+                        <span style="font-weight: 500;">:</span>
+                        <select onchange="updateMultiDayEntry('${entry.id}', 'startMin', this.value)" style="
+                            padding: 8px; border: 1px solid rgba(60,240,212,0.3);
+                            border-radius: 6px; background: rgba(60,240,212,0.05);
+                            color: inherit; min-width: 60px;
+                        ">
+                            <option value="0" ${entry.startMin === 0 ? 'selected' : ''}>00</option>
+                            <option value="30" ${entry.startMin === 30 ? 'selected' : ''}>30</option>
+                        </select>
+                        <select onchange="updateMultiDayEntry('${entry.id}', 'startAmPm', this.value)" style="
+                            padding: 8px; border: 1px solid rgba(60,240,212,0.3);
+                            border-radius: 6px; background: rgba(60,240,212,0.05);
+                            color: inherit; min-width: 60px;
+                        ">
+                            <option value="AM" ${entry.startAmPm === 'AM' ? 'selected' : ''}>AM</option>
+                            <option value="PM" ${entry.startAmPm === 'PM' ? 'selected' : ''}>PM</option>
+                        </select>
+                    </div>
+
+                    <span style="color: #94a3b8; font-weight: 500; margin: 0 5px;">to</span>
+
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <select onchange="updateMultiDayEntry('${entry.id}', 'endHour', this.value)" style="
+                            padding: 8px; border: 1px solid rgba(60,240,212,0.3);
+                            border-radius: 6px; background: rgba(60,240,212,0.05);
+                            color: inherit; min-width: 60px;
+                        ">
+                            ${Array.from({length: 12}, (_, i) => i + 1).map(h => `
+                                <option value="${h}" ${entry.endHour === h ? 'selected' : ''}>${h}</option>
+                            `).join('')}
+                        </select>
+                        <span style="font-weight: 500;">:</span>
+                        <select onchange="updateMultiDayEntry('${entry.id}', 'endMin', this.value)" style="
+                            padding: 8px; border: 1px solid rgba(60,240,212,0.3);
+                            border-radius: 6px; background: rgba(60,240,212,0.05);
+                            color: inherit; min-width: 60px;
+                        ">
+                            <option value="0" ${entry.endMin === 0 ? 'selected' : ''}>00</option>
+                            <option value="30" ${entry.endMin === 30 ? 'selected' : ''}>30</option>
+                        </select>
+                        <select onchange="updateMultiDayEntry('${entry.id}', 'endAmPm', this.value)" style="
+                            padding: 8px; border: 1px solid rgba(60,240,212,0.3);
+                            border-radius: 6px; background: rgba(60,240,212,0.05);
+                            color: inherit; min-width: 60px;
+                        ">
+                            <option value="AM" ${entry.endAmPm === 'AM' ? 'selected' : ''}>AM</option>
+                            <option value="PM" ${entry.endAmPm === 'PM' ? 'selected' : ''}>PM</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.updateMultiDayEntry = function(id, field, value) {
+    const entry = multiDayData.find(e => e.id == id);
+    if (entry) {
+        if (field === 'dayOfWeek' || field === 'startHour' || field === 'startMin' || field === 'endHour' || field === 'endMin') {
+            entry[field] = parseInt(value);
+        } else {
+            entry[field] = value;
+        }
+        updateDescriptionPreview();
+    }
+};
+
+window.removeMultiDayEntry = function(id) {
+    multiDayData = multiDayData.filter(e => e.id != id);
+    renderMultiDayEntries();
+    updateDescriptionPreview();
+    showModernToast("Day removed", "info");
+};
+
+/* ================ Modern Address Autocomplete System ================ */
 async function setupAddressAutocomplete() {
     const addressField = $("#address");
     const searchField = $("#addressSearch");
 
     if (!addressField && !searchField) return;
 
-    // Create suggestions dropdown
     suggestionsDropdown = document.createElement('div');
-    suggestionsDropdown.className = 'address-suggestions';
     suggestionsDropdown.style.cssText = `
-        position: absolute;
+        position: absolute; 
         background: rgba(30, 41, 59, 0.95);
-        border: 2px solid #3cf0d4;
-        border-radius: 8px;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 1000;
+        border: 1px solid rgba(60,240,212,0.3);
+        border-radius: 12px;
+        max-height: 240px; 
+        overflow-y: auto; 
+        z-index: 1000; 
         display: none;
-        backdrop-filter: blur(8px);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        backdrop-filter: blur(12px); 
+        box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+        min-width: 300px;
     `;
 
-    // Add autocomplete to both fields
     if (addressField) setupFieldAutocomplete(addressField);
     if (searchField) setupFieldAutocomplete(searchField);
 
-    console.log("✅ Address autocomplete system initialized");
+    console.log("✅ Modern address autocomplete ready");
 }
 
 function setupFieldAutocomplete(field) {
@@ -166,20 +538,14 @@ function setupFieldAutocomplete(field) {
         clearTimeout(timeout);
         const query = e.target.value.trim();
 
-        if (query.length < 3) {
+        if (query.length < 2) {
             hideSuggestions();
             return;
         }
 
-        // Debounce the search
         timeout = setTimeout(() => {
             searchAddressSuggestions(query, field);
-        }, 300);
-    });
-
-    field.addEventListener('blur', (e) => {
-        // Delay hiding to allow clicks on suggestions
-        setTimeout(() => hideSuggestions(), 200);
+        }, 400);
     });
 
     field.addEventListener('keydown', (e) => {
@@ -191,13 +557,15 @@ function setupFieldAutocomplete(field) {
             selectNextSuggestion(-1);
         } else if (e.key === 'Enter') {
             e.preventDefault();
-            const selected = suggestionsDropdown.querySelector('.suggestion-selected');
-            if (selected) {
-                selected.click();
-            } else if (field.value.trim()) {
-                geocodeAddress(field.value.trim());
-            }
+            const selected = suggestionsDropdown?.querySelector('.suggestion-selected');
+            if (selected) selected.click();
         } else if (e.key === 'Escape') {
+            hideSuggestions();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!field.contains(e.target) && !suggestionsDropdown?.contains(e.target)) {
             hideSuggestions();
         }
     });
@@ -205,22 +573,26 @@ function setupFieldAutocomplete(field) {
 
 async function searchAddressSuggestions(query, field) {
     try {
-        // Enhanced search for Portland, TX area
-        const searchQuery = query.includes('TX') || query.includes('Texas') ? 
-            query : `${query}, Portland, TX`;
+        const searchQuery = query.includes('TX') ? query : `${query}, Portland, TX`;
 
-        const url = `${CONFIG.GEOCODING_SERVICE}/suggest?` +
-            `text=${encodeURIComponent(searchQuery)}&` +
-            `f=json&` +
-            `maxSuggestions=8&` +
-            `searchExtent=-97.5,27.7,-97.1,28.1&` +
-            `location=-97.323,27.876`; // Portland, TX center
+        const url = `https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer/suggest?` +
+            `text=${encodeURIComponent(searchQuery)}&f=json&maxSuggestions=6&countryCode=USA&category=Address`;
 
         const response = await fetch(url);
         const data = await response.json();
 
         if (data.suggestions && data.suggestions.length > 0) {
-            showSuggestions(data.suggestions, field);
+            const filteredSuggestions = data.suggestions.filter(s => 
+                s.text.toLowerCase().includes('portland') || 
+                s.text.toLowerCase().includes('tx') ||
+                s.text.toLowerCase().includes('texas')
+            );
+
+            if (filteredSuggestions.length > 0) {
+                showModernSuggestions(filteredSuggestions, field);
+            } else if (data.suggestions.length > 0) {
+                showModernSuggestions(data.suggestions.slice(0, 4), field);
+            }
         } else {
             hideSuggestions();
         }
@@ -231,32 +603,55 @@ async function searchAddressSuggestions(query, field) {
     }
 }
 
-function showSuggestions(suggestions, field) {
-    // Position dropdown below the field
+function showModernSuggestions(suggestions, field) {
     const rect = field.getBoundingClientRect();
-    suggestionsDropdown.style.left = rect.left + 'px';
-    suggestionsDropdown.style.top = (rect.bottom + 2) + 'px';
-    suggestionsDropdown.style.width = rect.width + 'px';
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
 
-    // Create suggestion items
+    suggestionsDropdown.style.left = (rect.left + scrollLeft) + 'px';
+    suggestionsDropdown.style.top = (rect.bottom + scrollTop + 8) + 'px';
+    suggestionsDropdown.style.width = Math.max(rect.width, 320) + 'px';
+
     suggestionsDropdown.innerHTML = suggestions.map((suggestion, index) => `
-        <div class="suggestion-item" data-index="${index}" style="
-            padding: 12px 16px;
-            cursor: pointer;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            color: #f1f5f9;
-            transition: all 0.2s ease;
-        " 
-        onmouseover="this.style.background='rgba(60,240,212,0.2)'"
-        onmouseout="this.style.background='transparent'"
-        onclick="selectSuggestion('${suggestion.text.replace(/'/g, "\'")}', '${suggestion.magicKey}')">
-            <div style="font-weight: 600;">${suggestion.text}</div>
+        <div class="modern-suggestion-item" data-index="${index}" 
+             data-text="${suggestion.text.replace(/"/g, '&quot;')}"
+             data-magic="${suggestion.magicKey || ''}"
+             style="
+                 padding: 16px 20px; cursor: pointer; 
+                 border-bottom: 1px solid rgba(60,240,212,0.1);
+                 color: #f1f5f9; transition: all 0.3s ease;
+                 display: flex; align-items: center; gap: 12px;
+             ">
+            <div style="
+                width: 8px; height: 8px; border-radius: 50%;
+                background: #3cf0d4; opacity: 0.6;
+            "></div>
+            <div>
+                <div style="font-weight: 600; font-size: 15px; margin-bottom: 2px;">${suggestion.text}</div>
+                <div style="font-size: 12px; opacity: 0.7;">📍 Address suggestion</div>
+            </div>
         </div>
     `).join('');
 
+    suggestionsDropdown.querySelectorAll('.modern-suggestion-item').forEach(item => {
+        item.addEventListener('mouseenter', () => {
+            suggestionsDropdown.querySelectorAll('.modern-suggestion-item').forEach(i => {
+                i.classList.remove('suggestion-selected');
+                i.style.background = 'transparent';
+            });
+            item.classList.add('suggestion-selected');
+            item.style.background = 'rgba(60,240,212,0.15)';
+        });
+
+        item.addEventListener('click', () => {
+            const text = item.getAttribute('data-text');
+            const magicKey = item.getAttribute('data-magic');
+            selectSuggestion(text, magicKey, field);
+        });
+    });
+
     suggestionsDropdown.style.display = 'block';
     document.body.appendChild(suggestionsDropdown);
-
     addressSuggestions = suggestions;
 }
 
@@ -270,7 +665,9 @@ function hideSuggestions() {
 }
 
 function selectNextSuggestion(direction) {
-    const items = suggestionsDropdown.querySelectorAll('.suggestion-item');
+    const items = suggestionsDropdown?.querySelectorAll('.modern-suggestion-item');
+    if (!items) return;
+
     const current = suggestionsDropdown.querySelector('.suggestion-selected');
     let newIndex = 0;
 
@@ -283,28 +680,24 @@ function selectNextSuggestion(direction) {
 
     if (items[newIndex]) {
         items[newIndex].classList.add('suggestion-selected');
-        items[newIndex].style.background = 'rgba(60,240,212,0.3)';
+        items[newIndex].style.background = 'rgba(60,240,212,0.15)';
         items[newIndex].scrollIntoView({ block: 'nearest' });
     }
 }
 
-window.selectSuggestion = async function(text, magicKey) {
-    console.log("🏠 Selected suggestion:", text);
+async function selectSuggestion(text, magicKey, field) {
+    console.log("🏠 Selected modern suggestion:", text);
 
-    // Fill the active field
-    const activeField = document.activeElement;
-    if (activeField && (activeField.id === 'address' || activeField.id === 'addressSearch')) {
-        activeField.value = text;
-    }
-
+    field.value = text;
     hideSuggestions();
 
-    // Geocode to get coordinates and zoom
     try {
-        const url = `${CONFIG.GEOCODING_SERVICE}/findAddressCandidates?` +
-            `singleLine=${encodeURIComponent(text)}&` +
-            `magicKey=${magicKey}&` +
-            `f=json`;
+        let url;
+        if (magicKey) {
+            url = `https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?magicKey=${magicKey}&f=json`;
+        } else {
+            url = `https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?singleLine=${encodeURIComponent(text)}&f=json`;
+        }
 
         const response = await fetch(url);
         const data = await response.json();
@@ -313,19 +706,30 @@ window.selectSuggestion = async function(text, magicKey) {
             const candidate = data.candidates[0];
             const latlng = [candidate.location.y, candidate.location.x];
 
-            // Zoom to location
-            map.flyTo(latlng, 17, { duration: 1.0 });
+            map.flyTo(latlng, 17, { duration: 1.2 });
 
-            // Show temporary marker
-            if (window.searchMarker) {
-                map.removeLayer(window.searchMarker);
-            }
+            if (window.searchMarker) map.removeLayer(window.searchMarker);
 
             window.searchMarker = L.marker(latlng, {
                 icon: L.divIcon({
-                    html: '<div style="background: #3b82f6; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; color: white; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); animation: pulse 1s infinite;">📍</div>',
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
+                    html: `
+                        <div style="
+                            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+                            border-radius: 50%; width: 28px; height: 28px; 
+                            display: flex; align-items: center; justify-content: center; 
+                            color: white; border: 3px solid white; 
+                            box-shadow: 0 4px 16px rgba(59,130,246,0.4);
+                            animation: modernPulse 2s infinite;
+                        ">📍</div>
+                        <style>
+                            @keyframes modernPulse {
+                                0%, 100% { transform: scale(1); opacity: 1; }
+                                50% { transform: scale(1.1); opacity: 0.8; }
+                            }
+                        </style>
+                    `,
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14]
                 })
             }).addTo(map);
 
@@ -334,244 +738,324 @@ window.selectSuggestion = async function(text, magicKey) {
                     map.removeLayer(window.searchMarker);
                     window.searchMarker = null;
                 }
-            }, 3000);
+            }, 3500);
 
-            toast(`Found: ${candidate.address}`, "success");
+            showModernToast("📍 Address located", "success");
         }
     } catch (error) {
         console.warn("⚠️ Geocoding failed for suggestion:", error);
-        toast("Address found but couldn't get location", "warning");
     }
-};
+}
 
-/* ================ Building Footprints System ================ */
+/* ================ Modern Building Footprints + Click for Address ================ */
 async function loadBuildingFootprints(bounds) {
     if (!buildingsLayer) {
         buildingsLayer = L.layerGroup().addTo(map);
-        console.log("✅ Buildings layer created");
     }
 
-    // Clear existing buildings
     buildingsLayer.clearLayers();
 
     try {
-        console.log("🏠 Loading building footprints...");
-
-        // Get map bounds
         const mapBounds = bounds || map.getBounds();
         const bbox = `${mapBounds.getSouth()},${mapBounds.getWest()},${mapBounds.getNorth()},${mapBounds.getEast()}`;
 
-        // Overpass API query for buildings
         const overpassQuery = `
-            [out:json][timeout:15];
-            (
-                way["building"](${bbox});
-                relation["building"](${bbox});
-            );
+            [out:json][timeout:10];
+            (way["building"](${bbox});relation["building"](${bbox}););
             out geom;
         `;
 
-        const overpassUrl = 'https://overpass-api.de/api/interpreter';
-
-        const response = await fetch(overpassUrl, {
+        const response = await fetch('https://overpass-api.de/api/interpreter', {
             method: 'POST',
             body: overpassQuery,
             headers: { 'Content-Type': 'text/plain' }
         });
 
-        if (!response.ok) throw new Error('Overpass API request failed');
+        if (!response.ok) throw new Error('Building data unavailable');
 
         const data = await response.json();
-        console.log(`🏠 Found ${data.elements.length} buildings`);
+        console.log(`🏠 Processing ${data.elements.length} buildings`);
 
         let buildingsAdded = 0;
 
         data.elements.forEach(element => {
-            if (element.type === 'way' && element.geometry) {
+            if (element.type === 'way' && element.geometry && element.geometry.length > 2) {
                 try {
                     const coords = element.geometry.map(node => [node.lat, node.lon]);
 
-                    if (coords.length > 2) {
-                        const polygon = L.polygon(coords, {
-                            color: '#3cf0d4',
-                            weight: 1,
-                            opacity: 0.8,
-                            fillColor: '#3cf0d4',
-                            fillOpacity: 0.1,
-                            className: 'building-footprint'
+                    const polygon = L.polygon(coords, {
+                        color: '#3cf0d4',
+                        weight: 2,
+                        opacity: 0.8,
+                        fillColor: '#3cf0d4',
+                        fillOpacity: 0.12,
+                        className: 'modern-building-footprint'
+                    });
+
+                    polygon.on('click', async function(e) {
+                        const latlng = e.latlng;
+                        await getModernAddressForLocation(latlng, polygon);
+                    });
+
+                    // Hover effects
+                    polygon.on('mouseover', function() {
+                        this.setStyle({
+                            fillOpacity: 0.25,
+                            weight: 3
                         });
+                    });
 
-                        // Add popup with building info
-                        const tags = element.tags || {};
-                        const buildingType = tags.building || 'Building';
-                        const address = tags['addr:full'] || tags['addr:street'] || 'No address';
+                    polygon.on('mouseout', function() {
+                        this.setStyle({
+                            fillOpacity: 0.12,
+                            weight: 2
+                        });
+                    });
 
-                        polygon.bindPopup(`
-                            <div style="padding: 8px;">
-                                <h4 style="margin: 0 0 4px 0; color: #3cf0d4;">🏠 ${buildingType}</h4>
-                                <p style="margin: 2px 0; font-size: 12px;">${address}</p>
-                            </div>
-                        `);
+                    polygon.addTo(buildingsLayer);
+                    buildingsAdded++;
 
-                        polygon.addTo(buildingsLayer);
-                        buildingsAdded++;
-                    }
                 } catch (buildingError) {
-                    console.warn("⚠️ Failed to add building:", buildingError);
+                    // Skip problematic buildings
                 }
             }
         });
 
-        console.log(`✅ Added ${buildingsAdded} building footprints to map`);
-
-        if (buildingsAdded > 0) {
-            toast(`Loaded ${buildingsAdded} building footprints`, "info");
-        }
+        console.log(`✅ Added ${buildingsAdded} modern building footprints`);
 
     } catch (error) {
-        console.warn("⚠️ Failed to load building footprints:", error);
-        toast("Building footprints unavailable", "warning");
+        console.warn("⚠️ Buildings unavailable:", error);
     }
 }
 
-/* ================ Map Implementation ================ */
+async function getModernAddressForLocation(latlng, polygon) {
+    try {
+        const url = `https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?location=${latlng.lng},${latlng.lat}&f=json`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.address && data.address.Match_addr) {
+            const address = data.address.Match_addr;
+
+            polygon.bindPopup(`
+                <div style="
+                    padding: 20px; min-width: 280px; 
+                    background: linear-gradient(135deg, #1e293b, #334155);
+                    border-radius: 16px; color: white;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                ">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                        <div style="
+                            width: 40px; height: 40px; border-radius: 50%;
+                            background: linear-gradient(135deg, #3cf0d4, #22d3ee);
+                            display: flex; align-items: center; justify-content: center;
+                            font-size: 18px; color: #041311;
+                        ">🏠</div>
+                        <div>
+                            <h4 style="margin: 0; color: #3cf0d4; font-size: 18px;">Building Found</h4>
+                            <p style="margin: 2px 0 0 0; font-size: 12px; opacity: 0.7;">Click to use this address</p>
+                        </div>
+                    </div>
+
+                    <div style="
+                        background: rgba(60,240,212,0.1);
+                        border-radius: 12px; padding: 15px; margin-bottom: 15px;
+                        border: 1px solid rgba(60,240,212,0.2);
+                    ">
+                        <div style="font-size: 13px; opacity: 0.8; margin-bottom: 5px;">📍 ADDRESS</div>
+                        <div style="font-size: 15px; font-weight: 600; line-height: 1.4;">${address}</div>
+                    </div>
+
+                    <button onclick="useThisModernAddress('${address.replace(/'/g, "\'")}')" 
+                            style="
+                                width: 100%; padding: 12px;
+                                background: linear-gradient(135deg, #3cf0d4, #22d3ee);
+                                color: #041311; border: none; border-radius: 10px;
+                                cursor: pointer; font-size: 14px; font-weight: 600;
+                                transition: all 0.3s ease;
+                            " onmouseover="this.style.transform='translateY(-1px)'"
+                               onmouseout="this.style.transform='translateY(0)'">
+                        📋 Use This Address
+                    </button>
+                </div>
+            `).openPopup();
+
+            console.log("🏠 Found modern building address:", address);
+        } else {
+            polygon.bindPopup(`
+                <div style="
+                    padding: 20px; min-width: 240px;
+                    background: linear-gradient(135deg, #1e293b, #334155);
+                    border-radius: 16px; color: white;
+                    text-align: center;
+                ">
+                    <div style="font-size: 32px; margin-bottom: 10px;">🏠</div>
+                    <h4 style="margin: 0 0 8px 0; color: #3cf0d4;">Building</h4>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.8;">Address not available for this location</p>
+                </div>
+            `).openPopup();
+        }
+    } catch (error) {
+        console.warn("⚠️ Address lookup failed:", error);
+    }
+}
+
+window.useThisModernAddress = function(address) {
+    const addressField = $("#address");
+    if (addressField && inNewMode) {
+        addressField.value = address;
+        showModernToast("📋 Address copied to form", "success");
+        map.closePopup();
+        updateDescriptionPreview();
+    } else {
+        showModernToast("💡 Click 'New Sale' first, then click a building", "info");
+        map.closePopup();
+    }
+};
+
+/* ================ Enhanced Modern Map ================ */
 async function initMap() {
-    console.log("🗺️ Initializing enhanced map system...");
+    console.log("🗺️ Initializing modern map system...");
 
     try {
-        showLoadingOverlay("Initializing enhanced map...");
+        showModernLoadingOverlay("Loading modern map system...");
 
-        if (typeof L === 'undefined') {
-            throw new Error('Leaflet library not available');
-        }
-
-        // Create enhanced map
         map = L.map('map', {
-            center: [27.876, -97.323], // Portland, TX
-            zoom: 15, // Closer zoom to see buildings better
+            center: [27.876, -97.323],
+            zoom: 15,
             minZoom: 10,
-            maxZoom: 19, // Higher max zoom for building details
+            maxZoom: 19,
             zoomControl: true,
             attributionControl: true
         });
 
-        console.log("✅ Map created at:", map.getCenter());
-
-        // Enhanced base layers
+        // Modern enhanced layers
         const baseLayers = {
-            "Street View": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            "🗺️ Street Map": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors',
                 maxZoom: 19
             }),
-            "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Esri, DigitalGlobe, GeoEye',
-                maxZoom: 19
-            }),
-            "Hybrid": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            "🛰️ Hybrid + Roads": L.layerGroup([
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Esri, DigitalGlobe, GeoEye',
+                    maxZoom: 19
+                }),
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Esri',
+                    maxZoom: 19,
+                    opacity: 0.85
+                })
+            ]),
+            "📡 Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 attribution: 'Esri, DigitalGlobe, GeoEye',
                 maxZoom: 19
             })
         };
 
-        // Add default layer
-        baseLayers["Street View"].addTo(map);
+        // Start with modern Hybrid + Roads
+        baseLayers["🛰️ Hybrid + Roads"].addTo(map);
+        L.control.layers(baseLayers).addTo(map);
 
-        // Add layer control
-        const layerControl = L.control.layers(baseLayers);
-
-        // Add buildings toggle
-        const overlays = {
-            "Building Footprints": buildingsLayer = L.layerGroup()
-        };
-
-        layerControl.addOverlay(overlays["Building Footprints"], "Building Footprints");
-        layerControl.addTo(map);
-
-        console.log("✅ Enhanced layers added");
-
-        // Custom garage sale icon
-        window.garageSaleIcon = L.divIcon({
-            className: 'garage-sale-icon',
-            html: '<div style="background: linear-gradient(135deg, #3cf0d4, #7c89ff); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 1000;">🏷️</div>',
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
+        // Modern custom garage sale icon
+        window.modernGarageSaleIcon = L.divIcon({
+            className: 'modern-garage-sale-icon',
+            html: `
+                <div style="
+                    background: linear-gradient(135deg, #3cf0d4, #7c89ff);
+                    border-radius: 50%; width: 36px; height: 36px; 
+                    display: flex; align-items: center; justify-content: center; 
+                    font-size: 18px; border: 3px solid white; 
+                    box-shadow: 0 6px 20px rgba(60,240,212,0.4);
+                    z-index: 1000;
+                    position: relative;
+                ">🏷️
+                    <div style="
+                        position: absolute; top: -2px; right: -2px;
+                        width: 12px; height: 12px; border-radius: 50%;
+                        background: #10b981; border: 2px solid white;
+                        animation: modernBlink 2s infinite;
+                    "></div>
+                </div>
+                <style>
+                    @keyframes modernBlink {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: 0.3; }
+                    }
+                </style>
+            `,
+            iconSize: [36, 36],
+            iconAnchor: [18, 18]
         });
 
-        // Enhanced map event handlers
         map.on('click', onMapClick);
         map.on('mousemove', onMapMouseMove);
         map.on('zoomend', onMapZoom);
         map.on('moveend', onMapMove);
 
-        console.log("✅ Map event handlers added");
-
-        // Load initial data
         await Promise.all([
             loadGarageSales(),
             loadBuildingFootprints()
         ]);
 
-        // Setup address autocomplete
         await setupAddressAutocomplete();
 
-        hideLoadingOverlay();
+        hideModernLoadingOverlay();
 
-        console.log("✅ Enhanced map initialized successfully");
-        setStatus("Enhanced map ready with building footprints and address autocomplete!", 'success');
+        console.log("✅ Modern map system ready");
+        setModernStatus("🚀 Modern system ready with all premium features", 'success');
 
     } catch (error) {
-        hideLoadingOverlay();
+        hideModernLoadingOverlay();
         console.error("❌ Map initialization failed:", error);
-        setStatus("Failed to initialize map. Please refresh the page.", 'error');
-        toast("Map initialization failed", "error");
+        setModernStatus("Failed to initialize map. Please refresh.", 'error');
     }
 }
 
 function onMapZoom(e) {
     const zoom = map.getZoom();
-    console.log("🔍 Map zoom:", zoom);
-
-    // Load buildings at higher zoom levels
     if (zoom >= 16) {
         loadBuildingFootprints();
     } else {
-        // Clear buildings at lower zoom to reduce clutter
-        if (buildingsLayer) {
-            buildingsLayer.clearLayers();
-        }
+        if (buildingsLayer) buildingsLayer.clearLayers();
     }
 }
 
 function onMapMove(e) {
-    // Reload buildings when map moves significantly at high zoom
     if (map.getZoom() >= 16) {
         clearTimeout(window.moveTimeout);
         window.moveTimeout = setTimeout(() => {
             loadBuildingFootprints();
-        }, 1000);
+        }, 1200);
     }
 }
 
-function showLoadingOverlay(message = "Loading...") {
-    let overlay = $("#loading-overlay");
+function showModernLoadingOverlay(message = "Loading...") {
+    let overlay = $("#modern-loading-overlay");
     if (!overlay) {
         overlay = document.createElement("div");
-        overlay.id = "loading-overlay";
+        overlay.id = "modern-loading-overlay";
         overlay.style.cssText = `
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            position: fixed; inset: 0; 
+            background: rgba(0,0,0,0.85);
             display: flex; align-items: center; justify-content: center;
-            z-index: 500; color: white; font-size: 18px;
+            z-index: 500; backdrop-filter: blur(8px);
         `;
         document.body.appendChild(overlay);
     }
 
     overlay.innerHTML = `
-        <div style="text-align: center;">
-            <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3cf0d4; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 0 auto 20px;"></div>
-            <div>${message}</div>
+        <div style="text-align: center; color: white;">
+            <div style="
+                width: 60px; height: 60px; border: 4px solid rgba(60,240,212,0.3);
+                border-top: 4px solid #3cf0d4; border-radius: 50%;
+                animation: modernSpin 1s linear infinite;
+                margin: 0 auto 25px;
+            "></div>
+            <div style="font-size: 18px; font-weight: 500;">${message}</div>
         </div>
         <style>
-            @keyframes spin {
+            @keyframes modernSpin {
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
             }
@@ -580,40 +1064,38 @@ function showLoadingOverlay(message = "Loading...") {
     overlay.style.display = "flex";
 }
 
-function hideLoadingOverlay() {
-    const overlay = $("#loading-overlay");
+function hideModernLoadingOverlay() {
+    const overlay = $("#modern-loading-overlay");
     if (overlay) overlay.style.display = "none";
 }
 
-// FIXED garage sales loading
+/* ================ Modern Garage Sales Loading ================ */
 async function loadGarageSales() {
-    console.log("🔄 Loading garage sales from ArcGIS...");
+    console.log("🔄 Loading garage sales with modern system...");
 
     try {
-        const queryUrl = `${CONFIG.LAYER_URL}/query?where=1=1&outFields=*&returnGeometry=true&f=json`;
-        console.log("🌐 Querying URL:", queryUrl);
+        const queryUrl = `${CONFIG.LAYER_URL}/query?where=1%3D1&outFields=*&returnGeometry=true&f=json`;
+        console.log("🌐 Using modern URL:", queryUrl);
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         const response = await fetch(queryUrl, {
             signal: controller.signal,
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
+            method: 'GET'
         });
 
         clearTimeout(timeoutId);
-        console.log("📡 Response status:", response.status);
 
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log("📊 ArcGIS Response:", data);
+        console.log("📊 Modern ArcGIS Response:", data);
 
         if (data.error) {
-            console.error("❌ ArcGIS Service Error:", data.error);
+            console.error("❌ ArcGIS Error:", data.error);
             throw new Error(data.error.message || "ArcGIS service error");
         }
 
@@ -626,37 +1108,31 @@ async function loadGarageSales() {
         let markersAdded = 0;
         garageSalesData.forEach((feature, index) => {
             try {
-                const result = addGarageSaleMarker(feature, index);
-                if (result) markersAdded++;
-            } catch (markerError) {
-                console.warn("⚠️ Failed to add marker for feature", index, ":", markerError);
+                if (addModernGarageSaleMarker(feature, index)) {
+                    markersAdded++;
+                }
+            } catch (error) {
+                console.warn(`⚠️ Failed to add modern marker ${index}:`, error);
             }
         });
 
-        if (featureLayer.getLayers().length > 0) {
+        if (markersAdded > 0) {
             featureLayer.addTo(map);
-            console.log(`✅ Added ${markersAdded} garage sale markers to map`);
+            console.log(`✅ Added ${markersAdded} modern garage sale markers`);
         }
 
         _featureCount = garageSalesData.length;
-        updateStats();
+        updateModernStats();
 
         if (_featureCount === 0) {
-            setStatus("No garage sales found. Click 'New Sale' to add the first one.", 'info');
-            toast("No existing garage sales found", "info");
+            setModernStatus("No garage sales found. Click 'New Sale' to add the first one.", 'info');
         } else {
-            setStatus(`${_featureCount} garage sales loaded successfully.`, 'success');
-            toast(`Loaded ${_featureCount} garage sales`, "success");
+            setModernStatus(`${_featureCount} garage sales loaded successfully.`, 'success');
         }
 
     } catch (error) {
-        if (error.name === 'AbortError') {
-            error.message = 'Request timed out. Please check your connection.';
-        }
-
         console.error("❌ Failed to load garage sales:", error);
-        setStatus("Failed to load garage sales. You can still add new ones.", 'error');
-        toast(`Failed to load existing sales: ${error.message}`, "error");
+        setModernStatus("Could not load existing garage sales. You can still add new ones.", 'warning');
 
         if (!featureLayer) {
             featureLayer = L.layerGroup().addTo(map);
@@ -664,62 +1140,96 @@ async function loadGarageSales() {
     }
 }
 
-function addGarageSaleMarker(feature, index) {
+function addModernGarageSaleMarker(feature, index) {
     const geom = feature.geometry;
     const attrs = feature.attributes;
 
     if (!geom || typeof geom.y !== 'number' || typeof geom.x !== 'number') {
-        console.warn("⚠️ Feature", index, "has invalid coordinates:", geom);
+        console.warn(`⚠️ Invalid geometry for modern feature ${index}`);
         return false;
     }
 
     const marker = L.marker([geom.y, geom.x], { 
-        icon: window.garageSaleIcon,
+        icon: window.modernGarageSaleIcon,
         title: attrs[FIELDS.address] || `Garage Sale ${index + 1}`,
-        zIndexOffset: 1000 // Ensure garage sales appear above buildings
+        zIndexOffset: 1000
     });
 
-    const popupContent = createPopupContent(attrs);
+    const popupContent = createModernPopupContent(attrs);
     marker.bindPopup(popupContent);
 
     marker.on('click', () => {
-        console.log("📍 Clicked on garage sale:", attrs[FIELDS.address]);
         loadForEdit(feature);
     });
 
     marker.featureData = feature;
     featureLayer.addLayer(marker);
 
-    console.log(`✅ Added garage sale marker ${index + 1} at [${geom.y}, ${geom.x}]`);
     return true;
 }
 
-function createPopupContent(attributes) {
+function createModernPopupContent(attributes) {
     const address = attributes[FIELDS.address] || "No address";
     const description = attributes[FIELDS.description] || "No description";
     const startDate = attributes[FIELDS.start] ? 
         new Date(attributes[FIELDS.start]).toLocaleDateString() : "No date";
 
     return `
-        <div style="padding: 10px;">
-            <h4 style="margin: 0 0 8px 0; color: #3cf0d4;">${escapeHtml(address)}</h4>
-            <p style="margin: 4px 0;"><strong>When:</strong> ${escapeHtml(startDate)}</p>
-            <p style="margin: 4px 0;"><strong>Details:</strong> ${escapeHtml(description)}</p>
-            <button onclick="editSale(${attributes[objectIdField]})" style="margin-top: 8px; padding: 6px 12px; background: #3cf0d4; color: #041311; border: none; border-radius: 4px; cursor: pointer;">
-                ✏️ Edit Sale
+        <div style="
+            padding: 20px; min-width: 300px;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border-radius: 16px; color: white;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+        ">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                <div style="
+                    width: 48px; height: 48px; border-radius: 50%;
+                    background: linear-gradient(135deg, #3cf0d4, #22d3ee);
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 22px; color: #041311;
+                ">🏷️</div>
+                <div>
+                    <h4 style="margin: 0; color: #3cf0d4; font-size: 20px; font-weight: 700;">${address}</h4>
+                    <p style="margin: 3px 0 0 0; font-size: 13px; opacity: 0.7;">Garage Sale Location</p>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <div style="
+                    background: rgba(60,240,212,0.1);
+                    border-radius: 12px; padding: 15px;
+                    border: 1px solid rgba(60,240,212,0.2);
+                ">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;">📅 DATE</div>
+                            <div style="font-size: 15px; font-weight: 600;">${startDate}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;">🛍️ ITEMS</div>
+                            <div style="font-size: 15px; font-weight: 600;">${description}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="editSale(${attributes[objectIdField]})" 
+                    style="
+                        width: 100%; padding: 14px;
+                        background: linear-gradient(135deg, #3cf0d4, #22d3ee);
+                        color: #041311; border: none; border-radius: 12px;
+                        cursor: pointer; font-size: 15px; font-weight: 700;
+                        transition: all 0.3s ease;
+                        display: flex; align-items: center; justify-content: center; gap: 8px;
+                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(60,240,212,0.4)'"
+                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                <span>✏️</span> Edit Garage Sale
             </button>
         </div>
     `;
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text || '';
-    return div.innerHTML;
-}
-
 window.editSale = function(objectId) {
-    console.log("🖱️ Edit sale clicked for ID:", objectId);
     const marker = featureLayer.getLayers().find(layer => 
         layer.featureData.attributes[objectIdField] === objectId
     );
@@ -729,16 +1239,14 @@ window.editSale = function(objectId) {
     }
 };
 
-/* ================ FIXED Map Event Handlers ================ */
+/* ================ Modern Map Event Handlers ================ */
 function onMapClick(e) {
-    console.log("🖱️ Map clicked at:", e.latlng, "inNewMode:", inNewMode);
-
     if (!inNewMode) {
-        toast("Click 'New Sale' first to add a garage sale at a location", "info");
+        showModernToast("💡 Click 'New Sale' first to add a garage sale", "info");
         return;
     }
 
-    placeNewSale(e.latlng);
+    placeModernNewSale(e.latlng);
 }
 
 function onMapMouseMove(e) {
@@ -748,137 +1256,115 @@ function onMapMouseMove(e) {
     }
 }
 
-// COMPLETELY FIXED placeNewSale function
-function placeNewSale(latlng) {
-    console.log("📍 Placing new sale at:", latlng);
+function placeModernNewSale(latlng) {
+    console.log("📍 Placing modern new sale at:", latlng);
 
     if (editMarker) {
         map.removeLayer(editMarker);
-        console.log("🗑️ Removed previous edit marker");
     }
 
-    // Create enhanced bouncing marker
     editMarker = L.marker(latlng, {
         icon: L.divIcon({
-            className: 'edit-marker',
-            html: `<div style="
-                background: #10b981; 
-                border-radius: 50%; 
-                width: 36px; 
-                height: 36px; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center; 
-                font-size: 18px; 
-                border: 3px solid white; 
-                box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-                animation: bounce 1.5s infinite;
-                z-index: 2000;
-            ">📍</div>
-            <style>
-                @keyframes bounce {
-                    0%, 100% { transform: translateY(0); }
-                    50% { transform: translateY(-4px); }
-                }
-            </style>`,
-            iconSize: [36, 36],
-            iconAnchor: [18, 18]
+            html: `
+                <div style="
+                    background: linear-gradient(135deg, #10b981, #059669);
+                    border-radius: 50%; width: 48px; height: 48px; 
+                    display: flex; align-items: center; justify-content: center; 
+                    font-size: 24px; border: 4px solid white; 
+                    box-shadow: 0 8px 32px rgba(16,185,129,0.4);
+                    animation: modernBounce 1.5s infinite, modernGlow 2s infinite;
+                    z-index: 2000; color: white;
+                ">📍
+                    <div style="
+                        position: absolute; inset: -8px; border-radius: 50%;
+                        background: radial-gradient(circle, rgba(16,185,129,0.3), transparent);
+                        animation: modernRipple 1.5s infinite;
+                    "></div>
+                </div>
+                <style>
+                    @keyframes modernBounce {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-8px); }
+                    }
+                    @keyframes modernGlow {
+                        0%, 100% { box-shadow: 0 8px 32px rgba(16,185,129,0.4); }
+                        50% { box-shadow: 0 8px 32px rgba(16,185,129,0.8); }
+                    }
+                    @keyframes modernRipple {
+                        0% { transform: scale(0.8); opacity: 0.8; }
+                        100% { transform: scale(1.5); opacity: 0; }
+                    }
+                </style>
+            `,
+            iconSize: [48, 48],
+            iconAnchor: [24, 24]
         }),
-        title: 'New garage sale location',
         zIndexOffset: 2000
-    });
-
-    editMarker.addTo(map);
-    console.log("✅ Enhanced edit marker placed and added to map");
+    }).addTo(map);
 
     setTimeout(() => {
-        const addressField = $("#address");
-        if (addressField) {
-            addressField.focus();
-            console.log("🎯 Focused address field");
-        }
+        $("#address")?.focus();
     }, 100);
 
-    setStatus("Sale location placed! Fill out the form and click Save.", 'success');
-    toast("📍 Location placed! Fill out the form and save.", "success");
+    setModernStatus("🎯 Perfect! Location placed. Fill out the details below.", 'success');
+    showModernToast("📍 Location placed! Now fill out the form.", "success");
 
     reverseGeocode(latlng);
 }
 
-// Other core functions (same as before but with enhancements)
 async function reverseGeocode(latlng) {
     try {
-        const url = `${CONFIG.GEOCODING_SERVICE}/reverseGeocode?location=${latlng.lng},${latlng.lat}&f=json`;
+        const url = `https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?location=${latlng.lng},${latlng.lat}&f=json`;
         const response = await fetch(url);
         const data = await response.json();
 
         if (data.address && data.address.Match_addr) {
-            const address = data.address.Match_addr;
-            $("#address").value = address;
-            console.log("🏠 Reverse geocoded address:", address);
-            toast("Address found automatically", "info");
+            $("#address").value = data.address.Match_addr;
+            console.log("🏠 Auto-filled modern address:", data.address.Match_addr);
+            showModernToast("🏠 Address found automatically!", "info");
         }
     } catch (error) {
         console.warn("⚠️ Reverse geocoding failed:", error);
     }
 }
 
-function updateStats() {
+/* ================ Modern Core Functions ================ */
+function updateModernStats() {
     try {
-        const totalSales = garageSalesData.length;
-        $("#totalSales").textContent = totalSales.toString();
-        $("#weekendSales").textContent = "0";
-        console.log("📊 Stats updated - Total sales:", totalSales);
+        $("#totalSales").textContent = garageSalesData.length.toString();
+        $("#weekendSales").textContent = "0"; // Simplified for demo
     } catch (error) {
-        console.warn("⚠️ Stats update failed:", error);
+        console.warn("⚠️ Modern stats update failed:", error);
     }
 }
 
-// FIXED enterAddMode function
 function enterAddMode() {
-    console.log("🆕 Entering add mode...");
+    console.log("🆕 Entering modern add mode...");
 
     inNewMode = true;
 
-    const cancelBtn = $("#btnCancel");
-    if (cancelBtn) {
-        cancelBtn.style.display = "inline-block";
-        console.log("✅ Cancel button shown");
-    }
-
-    const modeChip = $("#modeChip");
-    if (modeChip) {
-        modeChip.style.display = "block";
-        modeChip.textContent = "✨ Click map to place garage sale";
-        console.log("✅ Mode chip shown");
-    }
+    $("#btnCancel").style.display = "inline-flex";
+    $("#modeChip").style.display = "flex";
+    $("#modeChip").innerHTML = '<span>✨</span> Click map to place garage sale';
 
     if (editMarker) {
         map.removeLayer(editMarker);
         editMarker = null;
-        console.log("🗑️ Cleared existing edit marker");
     }
 
-    setStatus("Click on the map where you want to place the garage sale.", 'info');
+    setModernStatus("✨ Great! Now click anywhere on the map to place your garage sale.", 'info');
+    $("#coordinates").textContent = "Click map to place garage sale";
 
-    const coords = $("#coordinates");
-    if (coords) coords.textContent = "Click map to place garage sale";
-
-    console.log("✅ Add mode activated - inNewMode:", inNewMode);
-    toast("Click anywhere on the map to place your garage sale", "info");
+    console.log("✅ Modern add mode activated");
+    showModernToast("✨ Click anywhere on the map to place your sale", "info");
 }
 
 function cancelEditing() {
-    console.log("❌ Cancelling edit mode...");
-
     inNewMode = false;
     selectedFeature = null;
 
-    const cancelBtn = $("#btnCancel");
-    if (cancelBtn) cancelBtn.style.display = "none";
-
-    const modeChip = $("#modeChip");
-    if (modeChip) modeChip.style.display = "none";
+    $("#btnCancel").style.display = "none";
+    $("#modeChip").style.display = "none";
 
     if (editMarker) {
         map.removeLayer(editMarker);
@@ -886,9 +1372,8 @@ function cancelEditing() {
     }
 
     clearForm();
-    setStatus("Ready to manage garage sales. Click 'New Sale' to add a location.", 'info');
-
-    console.log("✅ Edit mode cancelled");
+    setModernStatus("🏠 Ready to manage garage sales. Everything looks great!", 'info');
+    showModernToast("Editing cancelled", "info");
 }
 
 function clearForm() {
@@ -896,16 +1381,23 @@ function clearForm() {
     $("#details").value = "";
     $("#dateStart").value = "";
     $("#dateEnd").value = "";
+
+    const chkMultiDay = $("#chkMultiDay");
+    if (chkMultiDay) {
+        chkMultiDay.checked = false;
+        $("#single-day-times").style.display = 'block';
+        $("#multi-day-times").style.display = 'none';
+    }
+    multiDayData = [];
+
     updateDescriptionPreview();
 }
 
 function loadForEdit(feature) {
-    console.log("✏️ Loading feature for edit:", feature);
-
     selectedFeature = feature;
     inNewMode = false;
 
-    $("#btnCancel").style.display = "inline-block";
+    $("#btnCancel").style.display = "inline-flex";
     $("#modeChip").style.display = "none";
 
     const attrs = feature.attributes;
@@ -920,49 +1412,61 @@ function loadForEdit(feature) {
 
     editMarker = L.marker([geom.y, geom.x], {
         icon: L.divIcon({
-            className: 'edit-marker',
-            html: '<div style="background: #f59e0b; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 4px 16px rgba(0,0,0,0.4); z-index: 2000;">✏️</div>',
-            iconSize: [36, 36],
-            iconAnchor: [18, 18]
+            html: `
+                <div style="
+                    background: linear-gradient(135deg, #f59e0b, #d97706);
+                    border-radius: 50%; width: 48px; height: 48px; 
+                    display: flex; align-items: center; justify-content: center; 
+                    border: 4px solid white; 
+                    box-shadow: 0 8px 32px rgba(245,158,11,0.4);
+                    z-index: 2000; color: white; font-size: 24px;
+                    animation: modernEditPulse 2s infinite;
+                ">✏️</div>
+                <style>
+                    @keyframes modernEditPulse {
+                        0%, 100% { transform: scale(1); }
+                        50% { transform: scale(1.05); }
+                    }
+                </style>
+            `,
+            iconSize: [48, 48],
+            iconAnchor: [24, 24]
         }),
         zIndexOffset: 2000
     }).addTo(map);
 
-    map.flyTo([geom.y, geom.x], 17);
+    map.flyTo([geom.y, geom.x], 17, { duration: 1.2 });
 
     const address = attrs[FIELDS.address] || "Unknown location";
-    setStatus(`Editing: ${address}. Make changes and click Save.`, 'info');
+    setModernStatus(`✏️ Editing: ${address}. Make your changes and save.`, 'info');
 
     updateDescriptionPreview();
-    console.log("✅ Feature loaded for editing");
+    showModernToast("✏️ Editing garage sale", "info");
 }
 
-// Save operation (enhanced)
 async function onSave() {
-    console.log("💾 Attempting to save...");
-
     const address = $("#address").value.trim();
     const startDate = $("#dateStart").value;
 
     if (!address) {
-        toast("Address is required.", "warning");
+        showModernToast("⚠️ Address is required", "warning");
         $("#address").focus();
         return;
     }
 
     if (!startDate) {
-        toast("Start date is required.", "warning");
+        showModernToast("⚠️ Start date is required", "warning");
         $("#dateStart").focus();
         return;
     }
 
     if (!editMarker) {
-        toast("Please place a location on the map first.", "warning");
+        showModernToast("⚠️ Please place a location on the map first", "warning");
         return;
     }
 
     try {
-        showLoadingOverlay("Saving garage sale...");
+        showModernLoadingOverlay("Saving your garage sale...");
 
         const description = composeDescription();
         const latlng = editMarker.getLatLng();
@@ -988,42 +1492,33 @@ async function onSave() {
             edits = { adds: [{ attributes, geometry }] };
         }
 
-        const url = `${CONFIG.LAYER_URL}/applyEdits`;
         const formData = new FormData();
         formData.append('f', 'json');
         if (edits.adds) formData.append('adds', JSON.stringify(edits.adds));
         if (edits.updates) formData.append('updates', JSON.stringify(edits.updates));
 
-        const response = await fetch(url, {
+        const response = await fetch(`${CONFIG.LAYER_URL}/applyEdits`, {
             method: 'POST',
             body: formData
         });
 
         const result = await response.json();
+        hideModernLoadingOverlay();
 
-        hideLoadingOverlay();
-
-        if (result.error) {
-            throw new Error(result.error.message || "Save failed");
+        if (result.error || !(result.addResults?.[0]?.success || result.updateResults?.[0]?.success)) {
+            throw new Error(result.error?.message || "Save operation failed");
         }
 
-        const success = result.addResults?.[0]?.success || result.updateResults?.[0]?.success;
-        if (!success) {
-            throw new Error("Save operation returned false");
-        }
-
-        const successMessage = selectedFeature ? "Garage sale updated!" : "Garage sale added!";
-        toast(successMessage, "success");
-
-        console.log("✅ Save successful");
+        const successMessage = selectedFeature ? "🎉 Garage sale updated!" : "🎉 Garage sale added!";
+        showModernToast(successMessage, "success");
 
         await loadGarageSales();
         cancelEditing();
 
     } catch (error) {
-        hideLoadingOverlay();
-        console.error("❌ Save failed:", error);
-        toast(`Save failed: ${error.message}`, "error");
+        hideModernLoadingOverlay();
+        console.error("❌ Modern save failed:", error);
+        showModernToast(`❌ Save failed: ${error.message}`, "error");
     }
 }
 
@@ -1036,77 +1531,367 @@ function cycleTheme() {
     document.documentElement.setAttribute("data-theme", next);
     localStorage.setItem('preferred_theme', next);
 
-    toast(`Theme: ${next}`, "info");
+    showModernToast(`🎨 Theme: ${next}`, "info");
 }
 
-function showGuide() {
-    const modal = document.createElement("div");
-    modal.style.cssText = `
-        position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+/* ================ Modern Enhanced Guide ================ */
+function showModernGuide() {
+    const modalBackdrop = document.createElement("div");
+    modalBackdrop.className = "modern-guide-modal-backdrop";
+    modalBackdrop.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.9);
         display: flex; align-items: center; justify-content: center;
-        z-index: 1000; padding: 20px;
+        z-index: 10000; padding: 20px; backdrop-filter: blur(12px);
     `;
 
-    modal.innerHTML = `
-        <div style="background: #1e293b; border-radius: 16px; padding: 30px; max-width: 600px; color: white; max-height: 80vh; overflow-y: auto;">
-            <h2 style="color: #3cf0d4; margin-bottom: 20px;">🏷️ Enhanced Garage Sale Manager</h2>
+    modalBackdrop.innerHTML = `
+        <div class="modern-guide-modal-content" style="
+            background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+            border-radius: 24px; padding: 0; max-width: 900px; width: 100%;
+            color: white; max-height: 92vh; overflow: hidden;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+            border: 2px solid rgba(60,240,212,0.3);
+        ">
+            <!-- Modern Header -->
+            <div style="
+                background: linear-gradient(135deg, #3cf0d4, #06b6d4, #7c89ff);
+                padding: 30px; position: relative;
+                border-radius: 22px 22px 0 0;
+            ">
+                <div style="text-align: center;">
+                    <div style="font-size: 56px; margin-bottom: 15px;">🏷️</div>
+                    <h1 style="margin: 0; color: #041311; font-size: 32px; font-weight: 800; letter-spacing: -0.02em;">
+                        Ultimate Garage Sale Manager
+                    </h1>
+                    <p style="margin: 8px 0 0 0; color: rgba(4, 19, 17, 0.8); font-size: 16px; font-weight: 500;">
+                        Professional-grade system for the City of Portland, Texas
+                    </p>
+                </div>
 
-            <div style="margin-bottom: 20px;">
-                <h3 style="color: #7c89ff;">✨ New Features</h3>
-                <ul>
-                    <li><strong>Address Autocomplete:</strong> Type 3+ characters for suggestions</li>
-                    <li><strong>Building Footprints:</strong> Zoom in to see house outlines</li>
-                    <li><strong>Enhanced Search:</strong> Better address finding</li>
-                    <li><strong>Multiple Map Views:</strong> Street, Satellite, Hybrid</li>
-                </ul>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <h3 style="color: #7c89ff;">🎯 How to Use</h3>
-                <ol>
-                    <li>Type address for instant suggestions</li>
-                    <li>Click "New Sale" then click map location</li>
-                    <li>Fill form and save</li>
-                    <li>Zoom in to see building footprints</li>
-                </ol>
-            </div>
-
-            <div style="text-align: center; margin-top: 30px;">
-                <button onclick="this.closest('div').closest('div').remove()" 
-                        style="padding: 10px 20px; background: #3cf0d4; color: #041311; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                    Close Guide
+                <button class="modern-close-guide-btn" style="
+                    position: absolute; top: 20px; right: 25px;
+                    background: rgba(4, 19, 17, 0.15); color: #041311;
+                    border: none; border-radius: 50%; width: 42px; height: 42px;
+                    cursor: pointer; font-size: 20px; font-weight: 700;
+                    display: flex; align-items: center; justify-content: center;
+                    transition: all 0.3s ease; backdrop-filter: blur(8px);
+                " onmouseover="this.style.background='rgba(4, 19, 17, 0.3)'; this.style.transform='scale(1.05)'"
+                   onmouseout="this.style.background='rgba(4, 19, 17, 0.15)'; this.style.transform='scale(1)'">
+                    ✕
                 </button>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div style="
+                max-height: 65vh; overflow-y: auto; padding: 30px;
+                scrollbar-width: thin; scrollbar-color: #3cf0d4 transparent;
+            ">
+                <!-- Quick Start Section -->
+                <div style="margin-bottom: 30px;">
+                    <h2 style="color: #3cf0d4; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; font-size: 24px;">
+                        🚀 <span>Quick Start (60 Seconds)</span>
+                    </h2>
+                    <div style="
+                        background: linear-gradient(135deg, rgba(60,240,212,0.1), rgba(124,137,255,0.1));
+                        padding: 25px; border-radius: 16px; 
+                        border: 1px solid rgba(60,240,212,0.2);
+                    ">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div style="
+                                    width: 48px; height: 48px; border-radius: 50%;
+                                    background: #3cf0d4; color: #041311;
+                                    display: flex; align-items: center; justify-content: center;
+                                    font-size: 18px; font-weight: 700;
+                                ">1</div>
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 4px;">Click "New Sale"</div>
+                                    <div style="font-size: 13px; opacity: 0.8;">Start the process</div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div style="
+                                    width: 48px; height: 48px; border-radius: 50%;
+                                    background: #7c89ff; color: white;
+                                    display: flex; align-items: center; justify-content: center;
+                                    font-size: 18px; font-weight: 700;
+                                ">2</div>
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 4px;">Click Map/Building</div>
+                                    <div style="font-size: 13px; opacity: 0.8;">Place your sale</div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div style="
+                                    width: 48px; height: 48px; border-radius: 50%;
+                                    background: #10b981; color: white;
+                                    display: flex; align-items: center; justify-content: center;
+                                    font-size: 18px; font-weight: 700;
+                                ">3</div>
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 4px;">Fill & Save</div>
+                                    <div style="font-size: 13px; opacity: 0.8;">Complete the form</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Premium Features -->
+                <div style="margin-bottom: 30px;">
+                    <h2 style="color: #7c89ff; margin-bottom: 20px; font-size: 24px;">✨ Premium Features</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <div style="
+                            background: linear-gradient(135deg, rgba(124,137,255,0.1), rgba(124,137,255,0.05));
+                            padding: 20px; border-radius: 16px; 
+                            border: 1px solid rgba(124,137,255,0.2);
+                        ">
+                            <h3 style="color: #7c89ff; margin: 0 0 12px 0; font-size: 18px;">🔤 Smart Address Entry</h3>
+                            <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.5; opacity: 0.9;">
+                                Type just 2 characters and get instant suggestions. Arrow keys to navigate, Enter to select.
+                            </p>
+                            <div style="
+                                background: rgba(124,137,255,0.1); padding: 10px; border-radius: 8px;
+                                font-size: 12px; font-family: monospace;
+                            ">Example: Type "123 ma" → "123 Main St, Portland, TX"</div>
+                        </div>
+
+                        <div style="
+                            background: linear-gradient(135deg, rgba(60,240,212,0.1), rgba(60,240,212,0.05));
+                            padding: 20px; border-radius: 16px; 
+                            border: 1px solid rgba(60,240,212,0.2);
+                        ">
+                            <h3 style="color: #3cf0d4; margin: 0 0 12px 0; font-size: 18px;">🏠 Building Click Magic</h3>
+                            <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.5; opacity: 0.9;">
+                                Zoom in close, click any building to see its address, then click "Use This Address".
+                            </p>
+                            <div style="
+                                background: rgba(60,240,212,0.1); padding: 10px; border-radius: 8px;
+                                font-size: 12px; display: flex; align-items: center; gap: 8px;
+                            ">
+                                <span>💡</span> No more typing addresses manually!
+                            </div>
+                        </div>
+
+                        <div style="
+                            background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.05));
+                            padding: 20px; border-radius: 16px; 
+                            border: 1px solid rgba(245,158,11,0.2);
+                        ">
+                            <h3 style="color: #f59e0b; margin: 0 0 12px 0; font-size: 18px;">📅 Multi-Day Sales</h3>
+                            <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.5; opacity: 0.9;">
+                                Check "Multi-day sale" box, add different days with different times. Perfect for weekend sales!
+                            </p>
+                            <div style="
+                                background: rgba(245,158,11,0.1); padding: 10px; border-radius: 8px;
+                                font-size: 12px; font-family: monospace;
+                            ">Friday 7:00 AM - 2:00 PM & Saturday 8:00 AM - 4:00 PM</div>
+                        </div>
+
+                        <div style="
+                            background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05));
+                            padding: 20px; border-radius: 16px; 
+                            border: 1px solid rgba(16,185,129,0.2);
+                        ">
+                            <h3 style="color: #10b981; margin: 0 0 12px 0; font-size: 18px;">🛰️ Premium Map Views</h3>
+                            <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.5; opacity: 0.9;">
+                                "Hybrid + Roads" shows satellite imagery with street names. Perfect combo for finding locations!
+                            </p>
+                            <div style="
+                                background: rgba(16,185,129,0.1); padding: 10px; border-radius: 8px;
+                                font-size: 12px; display: flex; align-items: center; gap: 8px;
+                            ">
+                                <span>🗺️</span> Street • 🛰️ Hybrid • 📡 Satellite
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sale Templates -->
+                <div style="margin-bottom: 30px;">
+                    <h2 style="color: #f59e0b; margin-bottom: 20px; font-size: 24px;">📝 Quick Templates</h2>
+                    <div style="
+                        background: rgba(245,158,11,0.1); padding: 20px; border-radius: 16px;
+                        border: 1px solid rgba(245,158,11,0.2); margin-bottom: 15px;
+                    ">
+                        <p style="margin: 0 0 15px 0;">Save time with pre-made templates for common garage sale types:</p>
+                        <button onclick="showTemplateSelector(); closeModernGuideModal();" style="
+                            padding: 12px 20px; background: linear-gradient(135deg, #f59e0b, #d97706);
+                            color: white; border: none; border-radius: 10px; cursor: pointer;
+                            font-weight: 600; transition: all 0.3s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'"
+                           onmouseout="this.style.transform='translateY(0)'">
+                            🚀 Try Templates Now
+                        </button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        ${Object.entries(saleTemplates).map(([name, template]) => `
+                            <div style="
+                                background: rgba(245,158,11,0.05);
+                                border: 1px solid rgba(245,158,11,0.2);
+                                border-radius: 12px; padding: 15px; text-align: center;
+                            ">
+                                <div style="font-size: 32px; margin-bottom: 8px;">${template.icon}</div>
+                                <div style="font-weight: 600; margin-bottom: 5px; font-size: 14px;">${name}</div>
+                                <div style="font-size: 11px; opacity: 0.7;">${template.time.start}:00 ${template.time.startAmPm} - ${template.time.end}:00 ${template.time.endAmPm}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Pro Tips -->
+                <div style="margin-bottom: 30px;">
+                    <h2 style="color: #ef4444; margin-bottom: 20px; font-size: 24px;">🎯 Pro Tips</h2>
+                    <div style="
+                        background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.05));
+                        padding: 20px; border-radius: 16px; 
+                        border: 1px solid rgba(239,68,68,0.2);
+                    ">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                            <div>
+                                <h4 style="color: #ef4444; margin: 0 0 10px 0;">⌨️ Keyboard Shortcuts</h4>
+                                <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+                                    <li>Tab key moves between form fields</li>
+                                    <li>Arrow keys navigate address suggestions</li>
+                                    <li>Enter selects highlighted suggestion</li>
+                                    <li>Escape closes suggestion dropdown</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 style="color: #ef4444; margin: 0 0 10px 0;">🎨 Interface Tips</h4>
+                                <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+                                    <li>Click theme button for dark/light modes</li>
+                                    <li>Zoom to level 16+ to see buildings</li>
+                                    <li>Use Hybrid + Roads for best view</li>
+                                    <li>Status bar shows connection status</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Best Practices -->
+                <div>
+                    <h2 style="color: #06b6d4; margin-bottom: 20px; font-size: 24px;">✅ Best Practices</h2>
+                    <div style="
+                        background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(6,182,212,0.05));
+                        padding: 20px; border-radius: 16px; 
+                        border: 1px solid rgba(6,182,212,0.2);
+                    ">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                            <div>
+                                <h4 style="color: #06b6d4; margin: 0 0 12px 0;">📍 Location & Timing</h4>
+                                <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+                                    <li>Use exact street addresses</li>
+                                    <li>Most sales: 7 AM - 2 PM</li>
+                                    <li>Friday-Saturday for multi-day</li>
+                                    <li>Verify dates before saving</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 style="color: #06b6d4; margin: 0 0 12px 0;">🛍️ Items & Descriptions</h4>
+                                <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+                                    <li>List popular items (furniture, clothes)</li>
+                                    <li>Mention "everything must go" for moving sales</li>
+                                    <li>Include "multi-family" for neighborhood sales</li>
+                                    <li>Keep descriptions concise but informative</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modern Footer -->
+            <div style="
+                background: linear-gradient(135deg, rgba(60,240,212,0.15), rgba(124,137,255,0.15));
+                padding: 25px; border-top: 1px solid rgba(60,240,212,0.3);
+                text-align: center; border-radius: 0 0 22px 22px;
+            ">
+                <p style="margin: 0 0 15px 0; font-size: 15px; color: #94a3b8; line-height: 1.5;">
+                    Professional garage sale management system<br>
+                    <strong>City of Portland, Texas</strong> • Version 8.0 Modern
+                </p>
+
+                <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                    <button onclick="showTemplateSelector(); closeModernGuideModal();" style="
+                        padding: 12px 20px; background: linear-gradient(135deg, #3cf0d4, #22d3ee);
+                        color: #041311; border: none; border-radius: 10px; cursor: pointer;
+                        font-weight: 600; transition: all 0.3s ease;
+                    " onmouseover="this.style.transform='translateY(-1px)'"
+                       onmouseout="this.style.transform='translateY(0)'">
+                        📝 Try Templates
+                    </button>
+
+                    <button class="modern-close-guide-main" style="
+                        padding: 12px 20px; background: transparent;
+                        color: #94a3b8; border: 1px solid #475569; border-radius: 10px;
+                        cursor: pointer; font-weight: 500; transition: all 0.3s ease;
+                    " onmouseover="this.style.color='white'; this.style.borderColor='#64748b'"
+                       onmouseout="this.style.color='#94a3b8'; this.style.borderColor='#475569'">
+                        Close Guide
+                    </button>
+                </div>
             </div>
         </div>
     `;
 
-    document.body.appendChild(modal);
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.remove();
+    document.body.appendChild(modalBackdrop);
+
+    // Close button handlers - FIXED
+    const closeButtons = modalBackdrop.querySelectorAll('.modern-close-guide-btn, .modern-close-guide-main');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeModernGuideModal();
+        });
     });
+
+    // Close on backdrop click
+    modalBackdrop.addEventListener('click', function(e) {
+        if (e.target === modalBackdrop) {
+            closeModernGuideModal();
+        }
+    });
+
+    window.currentModernGuideModal = modalBackdrop;
 }
+
+function closeModernGuideModal() {
+    if (window.currentModernGuideModal) {
+        document.body.removeChild(window.currentModernGuideModal);
+        window.currentModernGuideModal = null;
+    }
+}
+
+window.closeModernGuideModal = closeModernGuideModal;
+window.showTemplateSelector = showTemplateSelector;
+window.closeTemplateModal = closeTemplateModal;
 
 function setupNetworkMonitoring() {
     window.addEventListener('online', () => {
         isOnline = true;
         updateConnectionStatus();
-        toast("Connection restored", "success");
         loadGarageSales();
+        showModernToast("🌐 Connection restored", "success");
     });
 
     window.addEventListener('offline', () => {
         isOnline = false;
         updateConnectionStatus();
-        toast("Connection lost", "warning");
+        showModernToast("⚠️ Connection lost - working offline", "warning");
     });
 
     updateConnectionStatus();
 }
 
-/* ================ Enhanced Initialization ================ */
+/* ================ Modern Premium Initialization ================ */
 async function init() {
-    console.log("🏛️ City of Portland Garage Sale Admin v8.0 - ULTIMATE ENHANCED");
-    console.log("🚀 Initializing with address autocomplete and building footprints...");
+    console.log("🏛️ Modern Stylish Garage Sale Admin v8.0");
+    console.log("🚀 Initializing premium modern system...");
 
     try {
         const savedTheme = localStorage.getItem('preferred_theme');
@@ -1115,100 +1900,69 @@ async function init() {
         }
 
         setupNetworkMonitoring();
-
-        // Initialize enhanced map
         await initMap();
 
-        // Set up form handlers
-        const formElements = ["timeStartHour", "timeStartMin", "timeStartAmPm", "timeEndHour", "timeEndMin", "timeEndAmPm", "details"];
-        formElements.forEach(id => {
-            const el = $("#" + id);
-            if (el) el.addEventListener("change", updateDescriptionPreview);
-        });
+        // Set up multi-day functionality
+        setupMultiDayFeature();
 
-        // Enhanced button handlers
+        // Form handlers with modern touch
+        ["timeStartHour", "timeStartMin", "timeStartAmPm", "timeEndHour", "timeEndMin", "timeEndAmPm", "details"]
+            .forEach(id => {
+                const el = $("#" + id);
+                if (el) el.addEventListener("change", updateDescriptionPreview);
+            });
+
+        // Modern button handlers with enhanced feedback
         const btnNew = $("#btnNew");
         if (btnNew) {
             btnNew.addEventListener("click", () => {
-                console.log("🆕 New Sale button clicked");
                 enterAddMode();
-            });
-            console.log("✅ New Sale button handler added");
-        }
-
-        const btnSave = $("#btnSave");
-        if (btnSave) {
-            btnSave.addEventListener("click", onSave);
-            console.log("✅ Save button handler added");
-        }
-
-        const btnCancel = $("#btnCancel");
-        if (btnCancel) {
-            btnCancel.addEventListener("click", cancelEditing);
-            console.log("✅ Cancel button handler added");
-        }
-
-        const btnTheme = $("#btnTheme");
-        if (btnTheme) {
-            btnTheme.addEventListener("click", cycleTheme);
-            console.log("✅ Theme button handler added");
-        }
-
-        const btnGuide = $("#btnGuide");
-        if (btnGuide) {
-            btnGuide.addEventListener("click", showGuide);
-            console.log("✅ Guide button handler added");
-        }
-
-        // Enhanced address search (now with autocomplete)
-        const btnSearch = $("#btnSearch");
-        const addressSearch = $("#addressSearch");
-
-        if (btnSearch && addressSearch) {
-            btnSearch.addEventListener("click", () => {
-                const address = addressSearch.value.trim();
-                if (address) {
-                    // Use the enhanced suggestion system
-                    if (addressSuggestions.length > 0) {
-                        selectSuggestion(addressSuggestions[0].text, addressSuggestions[0].magicKey);
-                    } else {
-                        geocodeAddress(address);
+                // Show template selector option
+                setTimeout(() => {
+                    if (confirm("Would you like to start with a template?")) {
+                        showTemplateSelector();
                     }
-                } else {
-                    toast("Please enter an address to search", "warning");
-                }
+                }, 1000);
             });
-            console.log("✅ Enhanced search button handler added");
         }
+
+        $("#btnSave")?.addEventListener("click", onSave);
+        $("#btnCancel")?.addEventListener("click", cancelEditing);
+        $("#btnTheme")?.addEventListener("click", cycleTheme);
+        $("#btnGuide")?.addEventListener("click", showModernGuide);
+
+        // Enhanced address search
+        $("#btnSearch")?.addEventListener("click", () => {
+            const address = $("#addressSearch").value.trim();
+            if (address && addressSuggestions.length > 0) {
+                selectSuggestion(addressSuggestions[0].text, addressSuggestions[0].magicKey, $("#addressSearch"));
+            } else if (address) {
+                showModernToast("💡 Try the autocomplete suggestions for better results", "info");
+            }
+        });
 
         updateDescriptionPreview();
 
-        console.log("✅ ALL ENHANCED SYSTEMS INITIALIZED SUCCESSFULLY");
-        setStatus("🚀 Ultimate system ready! Address autocomplete and building footprints enabled.", 'success');
-        toast("🏛️ Enhanced Garage Sale Admin ready! Try typing an address for autocomplete.", "success");
+        console.log("✅ Modern premium system ready!");
+        setModernStatus("🎉 Premium modern system ready! All enhanced features enabled.", 'success');
 
-        // Enhanced debug info
-        console.log("🔍 Enhanced Debug Info:");
-        console.log("- Map initialized:", !!map);
-        console.log("- Feature layer:", !!featureLayer);
-        console.log("- Buildings layer:", !!buildingsLayer);
-        console.log("- Address autocomplete:", !!suggestionsDropdown);
-        console.log("- New Sale button:", !!$("#btnNew"));
-        console.log("- inNewMode:", inNewMode);
+        // Welcome message
+        setTimeout(() => {
+            showModernToast("🏛️ Welcome to the premium garage sale management system!", "info", 5000);
+        }, 1000);
 
     } catch (error) {
-        console.error("❌ Enhanced initialization failed:", error);
-        setStatus("❌ Initialization failed. Please refresh the page.", 'error');
-        toast("System failed to start. Please refresh the page.", "error");
+        console.error("❌ Modern initialization failed:", error);
+        setModernStatus("System failed to start. Please refresh.", 'error');
     }
 }
 
 window.addEventListener('error', (event) => {
-    console.error("💥 Global error:", event.error);
+    console.error("💥 Modern error:", event.error);
 });
 
-window.addEventListener('unhandledrejection', (event) => {
-    console.error("💥 Unhandled promise rejection:", event.reason);
-});
+// Replace traditional functions with modern equivalents
+window.toast = showModernToast;
+window.setStatus = setModernStatus;
 
-console.log("🚀 Ultimate Enhanced Garage Sale Admin script loaded!");
+console.log("🚀 Modern Stylish Garage Sale Admin loaded with premium features!");
