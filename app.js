@@ -1,4 +1,4 @@
-// app.js — MODERN STYLISH Garage Sale Admin v8.0
+// app.js — MODERN STYLISH Garage Sale Admin v8.0 - FIXED COORDINATE PROJECTION
 // City of Portland, Texas - Premium Modern Design
 
 /* ================ Wait for DOM and Dependencies ================ */
@@ -36,6 +36,15 @@ let addressSuggestions = [];
 let suggestionsDropdown = null;
 let multiDayData = [];
 
+/* ================ 🔧 COORDINATE CONVERSION FIX ================ */
+// This fixes the Web Mercator to WGS84 projection issue
+function webMercatorToWGS84(x, y) {
+    const lng = x / 20037508.34 * 180;
+    let lat = y / 20037508.34 * 180;
+    lat = 180 / Math.PI * (2 * Math.atan(Math.exp(lat * Math.PI / 180)) - Math.PI / 2);
+    return [lat, lng];
+}
+
 /* ================ Modern UI Utilities ================ */
 const $ = (sel) => document.querySelector(sel);
 
@@ -47,20 +56,11 @@ function showError(message) {
         z-index: 9999; backdrop-filter: blur(8px);
     `;
     errorDiv.innerHTML = `
-        <div style="
-            background: linear-gradient(135deg, #1e293b, #334155);
-            border-radius: 20px; padding: 40px; text-align: center;
-            color: white; max-width: 400px; border: 1px solid #3cf0d4;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        ">
+        <div style="background: rgba(239,68,68,0.95); padding: 40px; border-radius: 16px; text-align: center; color: white; max-width: 500px; backdrop-filter: blur(12px);">
             <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
-            <h3 style="margin: 0 0 15px 0; font-size: 24px;">System Error</h3>
-            <p style="margin: 0 0 25px 0; opacity: 0.9;">${message}</p>
-            <button onclick="window.location.reload()" style="
-                padding: 12px 24px; background: #3cf0d4; color: #041311;
-                border: none; border-radius: 10px; cursor: pointer;
-                font-weight: 600; font-size: 16px;
-            ">Refresh Page</button>
+            <h3 style="margin: 0 0 16px 0; font-size: 24px;">System Error</h3>
+            <p style="margin: 0; font-size: 16px; line-height: 1.5;">${message}</p>
+            <button onclick="location.reload()" style="margin-top: 24px; padding: 12px 24px; background: white; color: #ef4444; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Refresh Page</button>
         </div>
     `;
     document.body.appendChild(errorDiv);
@@ -87,7 +87,7 @@ function showModernToast(msg, type = "info", duration = 4000) {
     toast.innerHTML = `
         <div style="display: flex; align-items: center; gap: 12px;">
             <span style="font-size: 18px;">${color.icon}</span>
-            <span style="flex: 1;">${msg}</span>
+            <span>${msg}</span>
         </div>
     `;
     toast.style.cssText = `
@@ -129,8 +129,8 @@ function updateConnectionStatus() {
     const statusEl = $("#connectionStatus");
     if (statusEl) {
         statusEl.innerHTML = isOnline ? 
-            '<span class="status-dot online"></span>Connected' :
-            '<span class="status-dot offline"></span>Offline';
+            '<span style="color: #10b981;">🌐 Connected</span>' :
+            '<span style="color: #ef4444;">⚠️ Offline</span>';
         statusEl.className = isOnline ? "connection-status online" : "connection-status offline";
     }
 }
@@ -225,40 +225,34 @@ function showTemplateSelector() {
     `;
 
     modal.innerHTML = `
-        <div style="
-            background: linear-gradient(135deg, #1e293b, #334155);
-            border-radius: 20px; padding: 30px; max-width: 600px; width: 90%;
-            color: white; border: 1px solid #3cf0d4;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        ">
-            <div style="text-align: center; margin-bottom: 30px;">
-                <h3 style="margin: 0; font-size: 28px; color: #3cf0d4;">📝 Choose a Template</h3>
-                <p style="margin: 10px 0 0 0; opacity: 0.8;">Quick start with common garage sale types</p>
+        <div style="background: rgba(30,41,59,0.95); border-radius: 20px; padding: 32px; max-width: 600px; width: 90%; backdrop-filter: blur(12px); border: 1px solid rgba(60,240,212,0.3);">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <h3 style="color: #3cf0d4; margin: 0 0 8px 0; font-size: 24px;">📝 Choose a Template</h3>
+                <p style="color: #94a3b8; margin: 0; font-size: 16px;">Quick start with common garage sale types</p>
             </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
                 ${Object.entries(saleTemplates).map(([name, template]) => `
-                    <div class="template-card" style="
-                        background: rgba(60,240,212,0.1);
-                        border: 1px solid rgba(60,240,212,0.3);
-                        border-radius: 16px; padding: 20px; cursor: pointer;
+                    <div class="template-card" onclick="applySaleTemplate('${name}'); closeTemplateModal();" style="
+                        background: rgba(60,240,212,0.1); border: 1px solid rgba(60,240,212,0.3); 
+                        border-radius: 12px; padding: 20px; cursor: pointer; 
                         transition: all 0.3s ease; text-align: center;
-                    " onclick="applySaleTemplate('${name}'); closeTemplateModal();">
-                        <div style="font-size: 48px; margin-bottom: 15px;">${template.icon}</div>
-                        <h4 style="margin: 0 0 10px 0; color: #3cf0d4; font-size: 18px;">${name}</h4>
-                        <p style="margin: 0; font-size: 14px; opacity: 0.9; line-height: 1.4;">${template.description}</p>
-                        <div style="margin-top: 15px; padding: 8px 16px; background: rgba(60,240,212,0.2); border-radius: 8px; font-size: 12px; font-weight: 600;">
-                            ${template.time.start}:00 ${template.time.startAmPm} - ${template.time.end}:00 ${template.time.endAmPm}
+                    ">
+                        <div style="font-size: 32px; margin-bottom: 8px;">${template.icon}</div>
+                        <h4 style="color: #3cf0d4; margin: 0 0 8px 0; font-size: 18px;">${name}</h4>
+                        <p style="color: #cbd5e1; margin: 0 0 12px 0; font-size: 14px; line-height: 1.4;">${template.description}</p>
+                        <div style="color: #94a3b8; font-size: 12px; font-weight: 500;">
+                            ⏰ ${template.time.start}:00 ${template.time.startAmPm} - ${template.time.end}:00 ${template.time.endAmPm}
                         </div>
                     </div>
                 `).join('')}
             </div>
 
-            <div style="text-align: center; margin-top: 30px;">
+            <div style="text-align: center;">
                 <button onclick="closeTemplateModal()" style="
-                    padding: 12px 24px; background: transparent; color: #94a3b8;
-                    border: 1px solid #475569; border-radius: 10px; cursor: pointer;
-                    font-weight: 500; transition: all 0.3s ease;
+                    background: rgba(100,116,139,0.2); border: 1px solid #64748b; 
+                    color: #cbd5e1; padding: 12px 24px; border-radius: 8px; 
+                    cursor: pointer; font-weight: 500;
                 ">Skip Templates</button>
             </div>
         </div>
@@ -380,100 +374,65 @@ function renderMultiDayEntries() {
     const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
     container.innerHTML = multiDayData.map((entry, index) => `
-        <div class="modern-multi-day-entry" data-id="${entry.id}" style="
-            background: rgba(60,240,212,0.05);
-            border: 1px solid rgba(60,240,212,0.2); 
-            border-radius: 12px; 
-            padding: 20px; 
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
-        ">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="
-                        background: #3cf0d4; color: #041311; 
-                        width: 32px; height: 32px; border-radius: 50%;
-                        display: flex; align-items: center; justify-content: center;
-                        font-weight: 700; font-size: 14px;
-                    ">${index + 1}</span>
-                    <span style="font-weight: 600; color: #3cf0d4; font-size: 16px;">Sale Day ${index + 1}</span>
+        <div style="background: rgba(60,240,212,0.05); border: 1px solid rgba(60,240,212,0.2); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #3cf0d4, #7c89ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">${index + 1}</div>
+                    <span style="color: #3cf0d4; font-weight: 600; font-size: 16px;">Sale Day ${index + 1}</span>
                 </div>
-                <button onclick="removeMultiDayEntry('${entry.id}')" style="
-                    background: linear-gradient(135deg, #ef4444, #dc2626);
-                    color: white; border: none; border-radius: 8px;
-                    width: 32px; height: 32px; cursor: pointer;
-                    display: flex; align-items: center; justify-content: center;
-                    font-size: 16px; transition: all 0.3s ease;
-                ">×</button>
+                <button onclick="removeMultiDayEntry(${entry.id})" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12px;">✕</button>
             </div>
-
-            <div style="display: grid; grid-template-columns: 120px 1fr; gap: 20px; align-items: center;">
-                <select onchange="updateMultiDayEntry('${entry.id}', 'dayOfWeek', this.value)" style="
-                    padding: 12px; border: 1px solid rgba(60,240,212,0.3);
-                    border-radius: 8px; background: rgba(60,240,212,0.05);
-                    color: inherit; font-size: 14px;
-                ">
-                    ${dayNames.map((day, i) => `
-                        <option value="${i}" ${entry.dayOfWeek === i ? 'selected' : ''}>${day}</option>
-                    `).join('')}
-                </select>
-
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                        <select onchange="updateMultiDayEntry('${entry.id}', 'startHour', this.value)" style="
-                            padding: 8px; border: 1px solid rgba(60,240,212,0.3);
-                            border-radius: 6px; background: rgba(60,240,212,0.05);
-                            color: inherit; min-width: 60px;
-                        ">
+            
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px; align-items: end;">
+                <div>
+                    <label style="color: #94a3b8; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block;">Day</label>
+                    <select onchange="updateMultiDayEntry(${entry.id}, 'dayOfWeek', this.value)" style="width: 100%; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
+                        ${dayNames.map((day, i) => `
+                            <option value="${i}" ${entry.dayOfWeek === i ? 'selected' : ''}>${day}</option>
+                        `).join('')}
+                    </select>
+                </div>
+                
+                <div style="display: flex; align-items: end; gap: 8px;">
+                    <div>
+                        <select onchange="updateMultiDayEntry(${entry.id}, 'startHour', this.value)" style="width: 60px; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
                             ${Array.from({length: 12}, (_, i) => i + 1).map(h => `
                                 <option value="${h}" ${entry.startHour === h ? 'selected' : ''}>${h}</option>
                             `).join('')}
                         </select>
-                        <span style="font-weight: 500;">:</span>
-                        <select onchange="updateMultiDayEntry('${entry.id}', 'startMin', this.value)" style="
-                            padding: 8px; border: 1px solid rgba(60,240,212,0.3);
-                            border-radius: 6px; background: rgba(60,240,212,0.05);
-                            color: inherit; min-width: 60px;
-                        ">
+                    </div>
+                    <span style="color: #94a3b8;">:</span>
+                    <div>
+                        <select onchange="updateMultiDayEntry(${entry.id}, 'startMin', this.value)" style="width: 60px; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
                             <option value="0" ${entry.startMin === 0 ? 'selected' : ''}>00</option>
                             <option value="30" ${entry.startMin === 30 ? 'selected' : ''}>30</option>
                         </select>
-                        <select onchange="updateMultiDayEntry('${entry.id}', 'startAmPm', this.value)" style="
-                            padding: 8px; border: 1px solid rgba(60,240,212,0.3);
-                            border-radius: 6px; background: rgba(60,240,212,0.05);
-                            color: inherit; min-width: 60px;
-                        ">
+                    </div>
+                    <div>
+                        <select onchange="updateMultiDayEntry(${entry.id}, 'startAmPm', this.value)" style="width: 60px; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
                             <option value="AM" ${entry.startAmPm === 'AM' ? 'selected' : ''}>AM</option>
                             <option value="PM" ${entry.startAmPm === 'PM' ? 'selected' : ''}>PM</option>
                         </select>
                     </div>
+                    
+                    <span style="color: #94a3b8; margin: 0 8px;">to</span>
 
-                    <span style="color: #94a3b8; font-weight: 500; margin: 0 5px;">to</span>
-
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                        <select onchange="updateMultiDayEntry('${entry.id}', 'endHour', this.value)" style="
-                            padding: 8px; border: 1px solid rgba(60,240,212,0.3);
-                            border-radius: 6px; background: rgba(60,240,212,0.05);
-                            color: inherit; min-width: 60px;
-                        ">
+                    <div>
+                        <select onchange="updateMultiDayEntry(${entry.id}, 'endHour', this.value)" style="width: 60px; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
                             ${Array.from({length: 12}, (_, i) => i + 1).map(h => `
                                 <option value="${h}" ${entry.endHour === h ? 'selected' : ''}>${h}</option>
                             `).join('')}
                         </select>
-                        <span style="font-weight: 500;">:</span>
-                        <select onchange="updateMultiDayEntry('${entry.id}', 'endMin', this.value)" style="
-                            padding: 8px; border: 1px solid rgba(60,240,212,0.3);
-                            border-radius: 6px; background: rgba(60,240,212,0.05);
-                            color: inherit; min-width: 60px;
-                        ">
+                    </div>
+                    <span style="color: #94a3b8;">:</span>
+                    <div>
+                        <select onchange="updateMultiDayEntry(${entry.id}, 'endMin', this.value)" style="width: 60px; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
                             <option value="0" ${entry.endMin === 0 ? 'selected' : ''}>00</option>
                             <option value="30" ${entry.endMin === 30 ? 'selected' : ''}>30</option>
                         </select>
-                        <select onchange="updateMultiDayEntry('${entry.id}', 'endAmPm', this.value)" style="
-                            padding: 8px; border: 1px solid rgba(60,240,212,0.3);
-                            border-radius: 6px; background: rgba(60,240,212,0.05);
-                            color: inherit; min-width: 60px;
-                        ">
+                    </div>
+                    <div>
+                        <select onchange="updateMultiDayEntry(${entry.id}, 'endAmPm', this.value)" style="width: 60px; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
                             <option value="AM" ${entry.endAmPm === 'AM' ? 'selected' : ''}>AM</option>
                             <option value="PM" ${entry.endAmPm === 'PM' ? 'selected' : ''}>PM</option>
                         </select>
@@ -613,22 +572,15 @@ function showModernSuggestions(suggestions, field) {
     suggestionsDropdown.style.width = Math.max(rect.width, 320) + 'px';
 
     suggestionsDropdown.innerHTML = suggestions.map((suggestion, index) => `
-        <div class="modern-suggestion-item" data-index="${index}" 
-             data-text="${suggestion.text.replace(/"/g, '&quot;')}"
+        <div class="modern-suggestion-item" 
+             data-index="${index}" 
+             data-text="${suggestion.text}" 
              data-magic="${suggestion.magicKey || ''}"
-             style="
-                 padding: 16px 20px; cursor: pointer; 
-                 border-bottom: 1px solid rgba(60,240,212,0.1);
-                 color: #f1f5f9; transition: all 0.3s ease;
-                 display: flex; align-items: center; gap: 12px;
-             ">
-            <div style="
-                width: 8px; height: 8px; border-radius: 50%;
-                background: #3cf0d4; opacity: 0.6;
-            "></div>
+             style="padding: 12px 16px; cursor: pointer; border-bottom: 1px solid rgba(100,116,139,0.1); display: flex; align-items: center; gap: 12px;">
+            <span style="color: #3cf0d4; font-size: 16px;">📍</span>
             <div>
-                <div style="font-weight: 600; font-size: 15px; margin-bottom: 2px;">${suggestion.text}</div>
-                <div style="font-size: 12px; opacity: 0.7;">📍 Address suggestion</div>
+                <div style="color: white; font-weight: 500;">${suggestion.text}</div>
+                <div style="color: #94a3b8; font-size: 12px;">📍 Address suggestion</div>
             </div>
         </div>
     `).join('');
@@ -713,20 +665,8 @@ async function selectSuggestion(text, magicKey, field) {
             window.searchMarker = L.marker(latlng, {
                 icon: L.divIcon({
                     html: `
-                        <div style="
-                            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-                            border-radius: 50%; width: 28px; height: 28px; 
-                            display: flex; align-items: center; justify-content: center; 
-                            color: white; border: 3px solid white; 
-                            box-shadow: 0 4px 16px rgba(59,130,246,0.4);
-                            animation: modernPulse 2s infinite;
-                        ">📍</div>
-                        <style>
-                            @keyframes modernPulse {
-                                0%, 100% { transform: scale(1); opacity: 1; }
-                                50% { transform: scale(1.1); opacity: 0.8; }
-                            }
-                        </style>
+                        <div style="background: #3cf0d4; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(60,240,212,0.4);">📍</div>
+                        <div style="position: absolute; top: -8px; left: -8px; width: 44px; height: 44px; border: 2px solid #3cf0d4; border-radius: 50%; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
                     `,
                     iconSize: [28, 28],
                     iconAnchor: [14, 14]
@@ -839,60 +779,34 @@ async function getModernAddressForLocation(latlng, polygon) {
             const address = data.address.Match_addr;
 
             polygon.bindPopup(`
-                <div style="
-                    padding: 20px; min-width: 280px; 
-                    background: linear-gradient(135deg, #1e293b, #334155);
-                    border-radius: 16px; color: white;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-                ">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
-                        <div style="
-                            width: 40px; height: 40px; border-radius: 50%;
-                            background: linear-gradient(135deg, #3cf0d4, #22d3ee);
-                            display: flex; align-items: center; justify-content: center;
-                            font-size: 18px; color: #041311;
-                        ">🏠</div>
-                        <div>
-                            <h4 style="margin: 0; color: #3cf0d4; font-size: 18px;">Building Found</h4>
-                            <p style="margin: 2px 0 0 0; font-size: 12px; opacity: 0.7;">Click to use this address</p>
-                        </div>
+                <div style="background: rgba(30,41,59,0.95); border-radius: 12px; padding: 16px; backdrop-filter: blur(12px); min-width: 200px;">
+                    <div style="text-align: center; margin-bottom: 16px;">
+                        <span style="font-size: 32px;">🏠</span>
+                    </div>
+                    
+                    <h4 style="color: #3cf0d4; margin: 0 0 8px 0; text-align: center;">Building Found</h4>
+                    <p style="color: #94a3b8; font-size: 14px; margin: 0 0 16px 0; text-align: center;">Click to use this address</p>
+                    
+                    <div style="background: rgba(60,240,212,0.1); border: 1px solid rgba(60,240,212,0.3); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                        <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">📍 ADDRESS</div>
+                        <div style="color: white; font-weight: 500;">${address}</div>
                     </div>
 
-                    <div style="
-                        background: rgba(60,240,212,0.1);
-                        border-radius: 12px; padding: 15px; margin-bottom: 15px;
-                        border: 1px solid rgba(60,240,212,0.2);
-                    ">
-                        <div style="font-size: 13px; opacity: 0.8; margin-bottom: 5px;">📍 ADDRESS</div>
-                        <div style="font-size: 15px; font-weight: 600; line-height: 1.4;">${address}</div>
-                    </div>
-
-                    <button onclick="useThisModernAddress('${address.replace(/'/g, "\'")}')" 
-                            style="
-                                width: 100%; padding: 12px;
-                                background: linear-gradient(135deg, #3cf0d4, #22d3ee);
-                                color: #041311; border: none; border-radius: 10px;
-                                cursor: pointer; font-size: 14px; font-weight: 600;
-                                transition: all 0.3s ease;
-                            " onmouseover="this.style.transform='translateY(-1px)'"
-                               onmouseout="this.style.transform='translateY(0)'">
-                        📋 Use This Address
-                    </button>
+                    <button onclick="useThisModernAddress('${address.replace(/'/g, "\\'")}')" style="
+                        width: 100%; background: linear-gradient(135deg, #3cf0d4, #7c89ff); 
+                        border: none; color: white; padding: 12px; border-radius: 8px; 
+                        font-weight: 600; cursor: pointer; font-size: 14px;
+                    ">Use This Address</button>
                 </div>
             `).openPopup();
 
             console.log("🏠 Found modern building address:", address);
         } else {
             polygon.bindPopup(`
-                <div style="
-                    padding: 20px; min-width: 240px;
-                    background: linear-gradient(135deg, #1e293b, #334155);
-                    border-radius: 16px; color: white;
-                    text-align: center;
-                ">
-                    <div style="font-size: 32px; margin-bottom: 10px;">🏠</div>
-                    <h4 style="margin: 0 0 8px 0; color: #3cf0d4;">Building</h4>
-                    <p style="margin: 0; font-size: 14px; opacity: 0.8;">Address not available for this location</p>
+                <div style="text-align: center; padding: 16px;">
+                    <span style="font-size: 32px;">🏠</span>
+                    <h4 style="color: #3cf0d4; margin: 8px 0;">Building</h4>
+                    <p style="color: #94a3b8; margin: 0;">Address not available for this location</p>
                 </div>
             `).openPopup();
         }
@@ -961,28 +875,11 @@ async function initMap() {
         window.modernGarageSaleIcon = L.divIcon({
             className: 'modern-garage-sale-icon',
             html: `
-                <div style="
-                    background: linear-gradient(135deg, #3cf0d4, #7c89ff);
-                    border-radius: 50%; width: 36px; height: 36px; 
-                    display: flex; align-items: center; justify-content: center; 
-                    font-size: 18px; border: 3px solid white; 
-                    box-shadow: 0 6px 20px rgba(60,240,212,0.4);
-                    z-index: 1000;
-                    position: relative;
-                ">🏷️
-                    <div style="
-                        position: absolute; top: -2px; right: -2px;
-                        width: 12px; height: 12px; border-radius: 50%;
-                        background: #10b981; border: 2px solid white;
-                        animation: modernBlink 2s infinite;
-                    "></div>
+                <div style="position: relative;">
+                    <div style="background: linear-gradient(135deg, #3cf0d4, #7c89ff); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(60,240,212,0.4); border: 3px solid white;">🏷️</div>
+                    <div style="position: absolute; top: -2px; left: -2px; width: 40px; height: 40px; border: 2px solid #3cf0d4; border-radius: 50%; animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite; opacity: 0.3;"></div>
+                    <div style="position: absolute; top: -4px; left: -4px; width: 44px; height: 44px; border: 1px solid #3cf0d4; border-radius: 50%; animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite; animation-delay: 1s; opacity: 0.2;"></div>
                 </div>
-                <style>
-                    @keyframes modernBlink {
-                        0%, 100% { opacity: 1; }
-                        50% { opacity: 0.3; }
-                    }
-                </style>
             `,
             iconSize: [36, 36],
             iconAnchor: [18, 18]
@@ -1046,20 +943,9 @@ function showModernLoadingOverlay(message = "Loading...") {
 
     overlay.innerHTML = `
         <div style="text-align: center; color: white;">
-            <div style="
-                width: 60px; height: 60px; border: 4px solid rgba(60,240,212,0.3);
-                border-top: 4px solid #3cf0d4; border-radius: 50%;
-                animation: modernSpin 1s linear infinite;
-                margin: 0 auto 25px;
-            "></div>
+            <div style="font-size: 48px; margin-bottom: 16px; animation: spin 2s linear infinite;">⚙️</div>
             <div style="font-size: 18px; font-weight: 500;">${message}</div>
         </div>
-        <style>
-            @keyframes modernSpin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        </style>
     `;
     overlay.style.display = "flex";
 }
@@ -1069,7 +955,7 @@ function hideModernLoadingOverlay() {
     if (overlay) overlay.style.display = "none";
 }
 
-/* ================ Modern Garage Sales Loading ================ */
+/* ================ 🔧 FIXED Modern Garage Sales Loading ================ */
 async function loadGarageSales() {
     console.log("🔄 Loading garage sales with modern system...");
 
@@ -1140,6 +1026,7 @@ async function loadGarageSales() {
     }
 }
 
+/* ================ 🔧 FIXED Modern Garage Sale Marker with Coordinate Conversion ================ */
 function addModernGarageSaleMarker(feature, index) {
     const geom = feature.geometry;
     const attrs = feature.attributes;
@@ -1149,7 +1036,12 @@ function addModernGarageSaleMarker(feature, index) {
         return false;
     }
 
-    const marker = L.marker([geom.y, geom.x], { 
+    // 🔧 FIX: CONVERT COORDINATES FROM WEB MERCATOR TO WGS84
+    const [lat, lng] = webMercatorToWGS84(geom.x, geom.y);
+    
+    console.log(`📍 Feature ${index}: Web Mercator (${geom.x}, ${geom.y}) -> WGS84 (${lat}, ${lng})`);
+
+    const marker = L.marker([lat, lng], { 
         icon: window.modernGarageSaleIcon,
         title: attrs[FIELDS.address] || `Garage Sale ${index + 1}`,
         zIndexOffset: 1000
@@ -1175,56 +1067,37 @@ function createModernPopupContent(attributes) {
         new Date(attributes[FIELDS.start]).toLocaleDateString() : "No date";
 
     return `
-        <div style="
-            padding: 20px; min-width: 300px;
-            background: linear-gradient(135deg, #1e293b, #334155);
-            border-radius: 16px; color: white;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-        ">
-            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                <div style="
-                    width: 48px; height: 48px; border-radius: 50%;
-                    background: linear-gradient(135deg, #3cf0d4, #22d3ee);
-                    display: flex; align-items: center; justify-content: center;
-                    font-size: 22px; color: #041311;
-                ">🏷️</div>
-                <div>
-                    <h4 style="margin: 0; color: #3cf0d4; font-size: 20px; font-weight: 700;">${address}</h4>
-                    <p style="margin: 3px 0 0 0; font-size: 13px; opacity: 0.7;">Garage Sale Location</p>
-                </div>
+        <div style="background: rgba(30,41,59,0.95); border-radius: 16px; padding: 20px; backdrop-filter: blur(12px); min-width: 250px;">
+            <div style="text-align: center; margin-bottom: 16px;">
+                <span style="font-size: 40px;">🏷️</span>
             </div>
-
-            <div style="margin-bottom: 20px;">
-                <div style="
-                    background: rgba(60,240,212,0.1);
-                    border-radius: 12px; padding: 15px;
-                    border: 1px solid rgba(60,240,212,0.2);
-                ">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div>
-                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;">📅 DATE</div>
-                            <div style="font-size: 15px; font-weight: 600;">${startDate}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;">🛍️ ITEMS</div>
-                            <div style="font-size: 15px; font-weight: 600;">${description}</div>
-                        </div>
+            
+            <h4 style="color: #3cf0d4; margin: 0 0 4px 0; text-align: center; font-size: 18px;">${address}</h4>
+            <p style="color: #94a3b8; font-size: 14px; margin: 0 0 16px 0; text-align: center;">Garage Sale Location</p>
+            
+            <div style="space-y: 12px;">
+                <div style="background: rgba(60,240,212,0.1); border: 1px solid rgba(60,240,212,0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <span style="color: #3cf0d4;">📅</span>
+                        <span style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">DATE</span>
                     </div>
+                    <div style="color: white; font-weight: 500;">${startDate}</div>
+                </div>
+                
+                <div style="background: rgba(60,240,212,0.1); border: 1px solid rgba(60,240,212,0.3); border-radius: 8px; padding: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <span style="color: #3cf0d4;">🛍️</span>
+                        <span style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">ITEMS</span>
+                    </div>
+                    <div style="color: white; font-weight: 500;">${description}</div>
                 </div>
             </div>
 
-            <button onclick="editSale(${attributes[objectIdField]})" 
-                    style="
-                        width: 100%; padding: 14px;
-                        background: linear-gradient(135deg, #3cf0d4, #22d3ee);
-                        color: #041311; border: none; border-radius: 12px;
-                        cursor: pointer; font-size: 15px; font-weight: 700;
-                        transition: all 0.3s ease;
-                        display: flex; align-items: center; justify-content: center; gap: 8px;
-                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(60,240,212,0.4)'"
-                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                <span>✏️</span> Edit Garage Sale
-            </button>
+            <button onclick="editSale(${attributes[objectIdField]})" style="
+                width: 100%; background: linear-gradient(135deg, #3cf0d4, #7c89ff); 
+                border: none; color: white; padding: 12px; border-radius: 8px; 
+                font-weight: 600; cursor: pointer; margin-top: 16px; font-size: 14px;
+            ">✏️ Edit This Sale</button>
         </div>
     `;
 }
@@ -1266,35 +1139,11 @@ function placeModernNewSale(latlng) {
     editMarker = L.marker(latlng, {
         icon: L.divIcon({
             html: `
-                <div style="
-                    background: linear-gradient(135deg, #10b981, #059669);
-                    border-radius: 50%; width: 48px; height: 48px; 
-                    display: flex; align-items: center; justify-content: center; 
-                    font-size: 24px; border: 4px solid white; 
-                    box-shadow: 0 8px 32px rgba(16,185,129,0.4);
-                    animation: modernBounce 1.5s infinite, modernGlow 2s infinite;
-                    z-index: 2000; color: white;
-                ">📍
-                    <div style="
-                        position: absolute; inset: -8px; border-radius: 50%;
-                        background: radial-gradient(circle, rgba(16,185,129,0.3), transparent);
-                        animation: modernRipple 1.5s infinite;
-                    "></div>
+                <div style="position: relative;">
+                    <div style="background: linear-gradient(135deg, #10b981, #3cf0d4); border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(16,185,129,0.4); border: 4px solid white;">📍</div>
+                    <div style="position: absolute; top: -4px; left: -4px; width: 56px; height: 56px; border: 2px solid #10b981; border-radius: 50%; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                    <div style="position: absolute; top: -8px; left: -8px; width: 64px; height: 64px; border: 1px solid #10b981; border-radius: 50%; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; animation-delay: 1s;"></div>
                 </div>
-                <style>
-                    @keyframes modernBounce {
-                        0%, 100% { transform: translateY(0); }
-                        50% { transform: translateY(-8px); }
-                    }
-                    @keyframes modernGlow {
-                        0%, 100% { box-shadow: 0 8px 32px rgba(16,185,129,0.4); }
-                        50% { box-shadow: 0 8px 32px rgba(16,185,129,0.8); }
-                    }
-                    @keyframes modernRipple {
-                        0% { transform: scale(0.8); opacity: 0.8; }
-                        100% { transform: scale(1.5); opacity: 0; }
-                    }
-                </style>
             `,
             iconSize: [48, 48],
             iconAnchor: [24, 24]
@@ -1345,7 +1194,7 @@ function enterAddMode() {
 
     $("#btnCancel").style.display = "inline-flex";
     $("#modeChip").style.display = "flex";
-    $("#modeChip").innerHTML = '<span>✨</span> Click map to place garage sale';
+    $("#modeChip").innerHTML = '✨ Click map to place garage sale';
 
     if (editMarker) {
         map.removeLayer(editMarker);
@@ -1393,6 +1242,7 @@ function clearForm() {
     updateDescriptionPreview();
 }
 
+/* ================ 🔧 FIXED Load for Edit with Coordinate Conversion ================ */
 function loadForEdit(feature) {
     selectedFeature = feature;
     inNewMode = false;
@@ -1410,24 +1260,16 @@ function loadForEdit(feature) {
 
     if (editMarker) map.removeLayer(editMarker);
 
-    editMarker = L.marker([geom.y, geom.x], {
+    // 🔧 FIX: CONVERT COORDINATES HERE TOO
+    const [lat, lng] = webMercatorToWGS84(geom.x, geom.y);
+
+    editMarker = L.marker([lat, lng], {
         icon: L.divIcon({
             html: `
-                <div style="
-                    background: linear-gradient(135deg, #f59e0b, #d97706);
-                    border-radius: 50%; width: 48px; height: 48px; 
-                    display: flex; align-items: center; justify-content: center; 
-                    border: 4px solid white; 
-                    box-shadow: 0 8px 32px rgba(245,158,11,0.4);
-                    z-index: 2000; color: white; font-size: 24px;
-                    animation: modernEditPulse 2s infinite;
-                ">✏️</div>
-                <style>
-                    @keyframes modernEditPulse {
-                        0%, 100% { transform: scale(1); }
-                        50% { transform: scale(1.05); }
-                    }
-                </style>
+                <div style="position: relative;">
+                    <div style="background: linear-gradient(135deg, #f59e0b, #eab308); border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(245,158,11,0.4); border: 4px solid white;">✏️</div>
+                    <div style="position: absolute; top: -4px; left: -4px; width: 56px; height: 56px; border: 2px solid #f59e0b; border-radius: 50%; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                </div>
             `,
             iconSize: [48, 48],
             iconAnchor: [24, 24]
@@ -1435,7 +1277,7 @@ function loadForEdit(feature) {
         zIndexOffset: 2000
     }).addTo(map);
 
-    map.flyTo([geom.y, geom.x], 17, { duration: 1.2 });
+    map.flyTo([lat, lng], 17, { duration: 1.2 });
 
     const address = attrs[FIELDS.address] || "Unknown location";
     setModernStatus(`✏️ Editing: ${address}. Make your changes and save.`, 'info');
@@ -1478,6 +1320,8 @@ async function onSave() {
             [FIELDS.end]: toEpochMaybe($("#dateEnd").value)
         };
 
+        // Note: We save coordinates as WGS84 but ArcGIS might convert them
+        // The service should handle this automatically
         const geometry = {
             x: latlng.lng,
             y: latlng.lat,
@@ -1545,294 +1389,157 @@ function showModernGuide() {
     `;
 
     modalBackdrop.innerHTML = `
-        <div class="modern-guide-modal-content" style="
-            background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
-            border-radius: 24px; padding: 0; max-width: 900px; width: 100%;
-            color: white; max-height: 92vh; overflow: hidden;
-            box-shadow: 0 25px 80px rgba(0,0,0,0.6);
-            border: 2px solid rgba(60,240,212,0.3);
-        ">
-            <!-- Modern Header -->
-            <div style="
-                background: linear-gradient(135deg, #3cf0d4, #06b6d4, #7c89ff);
-                padding: 30px; position: relative;
-                border-radius: 22px 22px 0 0;
-            ">
-                <div style="text-align: center;">
-                    <div style="font-size: 56px; margin-bottom: 15px;">🏷️</div>
-                    <h1 style="margin: 0; color: #041311; font-size: 32px; font-weight: 800; letter-spacing: -0.02em;">
-                        Ultimate Garage Sale Manager
-                    </h1>
-                    <p style="margin: 8px 0 0 0; color: rgba(4, 19, 17, 0.8); font-size: 16px; font-weight: 500;">
-                        Professional-grade system for the City of Portland, Texas
-                    </p>
+        <div style="background: rgba(30,41,59,0.95); border-radius: 20px; padding: 40px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; backdrop-filter: blur(12px); border: 1px solid rgba(60,240,212,0.3);">
+            <div style="text-align: center; margin-bottom: 32px;">
+                <button onclick="closeModernGuideModal()" style="position: absolute; top: 20px; right: 20px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">✕ Close</button>
+                
+                <div style="font-size: 48px; margin-bottom: 16px;">🏷️</div>
+                <h2 style="color: #3cf0d4; margin: 0 0 8px 0; font-size: 32px;">Ultimate Garage Sale Manager</h2>
+                <div style="background: linear-gradient(135deg, #3cf0d4, #7c89ff); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 16px; font-weight: 600;">
+                    Professional-grade system for the City of Portland, Texas
                 </div>
-
-                <button class="modern-close-guide-btn" style="
-                    position: absolute; top: 20px; right: 25px;
-                    background: rgba(4, 19, 17, 0.15); color: #041311;
-                    border: none; border-radius: 50%; width: 42px; height: 42px;
-                    cursor: pointer; font-size: 20px; font-weight: 700;
-                    display: flex; align-items: center; justify-content: center;
-                    transition: all 0.3s ease; backdrop-filter: blur(8px);
-                " onmouseover="this.style.background='rgba(4, 19, 17, 0.3)'; this.style.transform='scale(1.05)'"
-                   onmouseout="this.style.background='rgba(4, 19, 17, 0.15)'; this.style.transform='scale(1)'">
-                    ✕
-                </button>
             </div>
 
-            <!-- Scrollable Content -->
-            <div style="
-                max-height: 65vh; overflow-y: auto; padding: 30px;
-                scrollbar-width: thin; scrollbar-color: #3cf0d4 transparent;
-            ">
-                <!-- Quick Start Section -->
-                <div style="margin-bottom: 30px;">
-                    <h2 style="color: #3cf0d4; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; font-size: 24px;">
-                        🚀 <span>Quick Start (60 Seconds)</span>
-                    </h2>
-                    <div style="
-                        background: linear-gradient(135deg, rgba(60,240,212,0.1), rgba(124,137,255,0.1));
-                        padding: 25px; border-radius: 16px; 
-                        border: 1px solid rgba(60,240,212,0.2);
-                    ">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                <div style="
-                                    width: 48px; height: 48px; border-radius: 50%;
-                                    background: #3cf0d4; color: #041311;
-                                    display: flex; align-items: center; justify-content: center;
-                                    font-size: 18px; font-weight: 700;
-                                ">1</div>
-                                <div>
-                                    <div style="font-weight: 600; margin-bottom: 4px;">Click "New Sale"</div>
-                                    <div style="font-size: 13px; opacity: 0.8;">Start the process</div>
-                                </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">🚀</div>
+                    <h3 style="color: #3cf0d4; margin: 0 0 8px 0;">Quick Start (60 Seconds)</h3>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px; background: rgba(60,240,212,0.1); border-radius: 8px; padding: 12px;">
+                            <div style="background: #3cf0d4; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">1</div>
+                            <div style="text-align: left;">
+                                <div style="color: white; font-weight: 500;">Click "New Sale"</div>
+                                <div style="color: #94a3b8; font-size: 12px;">Start the process</div>
                             </div>
+                        </div>
 
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                <div style="
-                                    width: 48px; height: 48px; border-radius: 50%;
-                                    background: #7c89ff; color: white;
-                                    display: flex; align-items: center; justify-content: center;
-                                    font-size: 18px; font-weight: 700;
-                                ">2</div>
-                                <div>
-                                    <div style="font-weight: 600; margin-bottom: 4px;">Click Map/Building</div>
-                                    <div style="font-size: 13px; opacity: 0.8;">Place your sale</div>
-                                </div>
+                        <div style="display: flex; align-items: center; gap: 12px; background: rgba(60,240,212,0.1); border-radius: 8px; padding: 12px;">
+                            <div style="background: #3cf0d4; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">2</div>
+                            <div style="text-align: left;">
+                                <div style="color: white; font-weight: 500;">Click Map/Building</div>
+                                <div style="color: #94a3b8; font-size: 12px;">Place your sale</div>
                             </div>
+                        </div>
 
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                <div style="
-                                    width: 48px; height: 48px; border-radius: 50%;
-                                    background: #10b981; color: white;
-                                    display: flex; align-items: center; justify-content: center;
-                                    font-size: 18px; font-weight: 700;
-                                ">3</div>
-                                <div>
-                                    <div style="font-weight: 600; margin-bottom: 4px;">Fill & Save</div>
-                                    <div style="font-size: 13px; opacity: 0.8;">Complete the form</div>
-                                </div>
+                        <div style="display: flex; align-items: center; gap: 12px; background: rgba(60,240,212,0.1); border-radius: 8px; padding: 12px;">
+                            <div style="background: #3cf0d4; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">3</div>
+                            <div style="text-align: left;">
+                                <div style="color: white; font-weight: 500;">Fill & Save</div>
+                                <div style="color: #94a3b8; font-size: 12px;">Complete the form</div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Premium Features -->
-                <div style="margin-bottom: 30px;">
-                    <h2 style="color: #7c89ff; margin-bottom: 20px; font-size: 24px;">✨ Premium Features</h2>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                        <div style="
-                            background: linear-gradient(135deg, rgba(124,137,255,0.1), rgba(124,137,255,0.05));
-                            padding: 20px; border-radius: 16px; 
-                            border: 1px solid rgba(124,137,255,0.2);
-                        ">
-                            <h3 style="color: #7c89ff; margin: 0 0 12px 0; font-size: 18px;">🔤 Smart Address Entry</h3>
-                            <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.5; opacity: 0.9;">
+                
+                <div style="text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">✨</div>
+                    <h3 style="color: #3cf0d4; margin: 0 0 16px 0;">Premium Features</h3>
+                    
+                    <div style="text-align: left; space-y: 16px;">
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color: #7c89ff; margin: 0 0 4px 0; font-size: 16px;">🔤 Smart Address Entry</h4>
+                            <p style="color: #94a3b8; font-size: 13px; margin: 0; line-height: 1.4;">
                                 Type just 2 characters and get instant suggestions. Arrow keys to navigate, Enter to select.
                             </p>
-                            <div style="
-                                background: rgba(124,137,255,0.1); padding: 10px; border-radius: 8px;
-                                font-size: 12px; font-family: monospace;
-                            ">Example: Type "123 ma" → "123 Main St, Portland, TX"</div>
+                            <div style="background: rgba(124,137,255,0.1); border-radius: 4px; padding: 4px 8px; margin-top: 4px; font-family: monospace; font-size: 11px; color: #7c89ff;">
+                                Example: Type "123 ma" → "123 Main St, Portland, TX"
+                            </div>
                         </div>
 
-                        <div style="
-                            background: linear-gradient(135deg, rgba(60,240,212,0.1), rgba(60,240,212,0.05));
-                            padding: 20px; border-radius: 16px; 
-                            border: 1px solid rgba(60,240,212,0.2);
-                        ">
-                            <h3 style="color: #3cf0d4; margin: 0 0 12px 0; font-size: 18px;">🏠 Building Click Magic</h3>
-                            <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.5; opacity: 0.9;">
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color: #7c89ff; margin: 0 0 4px 0; font-size: 16px;">🏠 Building Click Magic</h4>
+                            <p style="color: #94a3b8; font-size: 13px; margin: 0 0 4px 0; line-height: 1.4;">
                                 Zoom in close, click any building to see its address, then click "Use This Address".
                             </p>
-                            <div style="
-                                background: rgba(60,240,212,0.1); padding: 10px; border-radius: 8px;
-                                font-size: 12px; display: flex; align-items: center; gap: 8px;
-                            ">
-                                <span>💡</span> No more typing addresses manually!
+                            <div style="color: #10b981; font-size: 12px; font-weight: 500;">
+                                💡 No more typing addresses manually!
                             </div>
                         </div>
 
-                        <div style="
-                            background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.05));
-                            padding: 20px; border-radius: 16px; 
-                            border: 1px solid rgba(245,158,11,0.2);
-                        ">
-                            <h3 style="color: #f59e0b; margin: 0 0 12px 0; font-size: 18px;">📅 Multi-Day Sales</h3>
-                            <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.5; opacity: 0.9;">
+                        <div>
+                            <h4 style="color: #7c89ff; margin: 0 0 4px 0; font-size: 16px;">📅 Multi-Day Sales</h4>
+                            <p style="color: #94a3b8; font-size: 13px; margin: 0 0 4px 0; line-height: 1.4;">
                                 Check "Multi-day sale" box, add different days with different times. Perfect for weekend sales!
                             </p>
-                            <div style="
-                                background: rgba(245,158,11,0.1); padding: 10px; border-radius: 8px;
-                                font-size: 12px; font-family: monospace;
-                            ">Friday 7:00 AM - 2:00 PM & Saturday 8:00 AM - 4:00 PM</div>
-                        </div>
-
-                        <div style="
-                            background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05));
-                            padding: 20px; border-radius: 16px; 
-                            border: 1px solid rgba(16,185,129,0.2);
-                        ">
-                            <h3 style="color: #10b981; margin: 0 0 12px 0; font-size: 18px;">🛰️ Premium Map Views</h3>
-                            <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.5; opacity: 0.9;">
-                                "Hybrid + Roads" shows satellite imagery with street names. Perfect combo for finding locations!
-                            </p>
-                            <div style="
-                                background: rgba(16,185,129,0.1); padding: 10px; border-radius: 8px;
-                                font-size: 12px; display: flex; align-items: center; gap: 8px;
-                            ">
-                                <span>🗺️</span> Street • 🛰️ Hybrid • 📡 Satellite
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sale Templates -->
-                <div style="margin-bottom: 30px;">
-                    <h2 style="color: #f59e0b; margin-bottom: 20px; font-size: 24px;">📝 Quick Templates</h2>
-                    <div style="
-                        background: rgba(245,158,11,0.1); padding: 20px; border-radius: 16px;
-                        border: 1px solid rgba(245,158,11,0.2); margin-bottom: 15px;
-                    ">
-                        <p style="margin: 0 0 15px 0;">Save time with pre-made templates for common garage sale types:</p>
-                        <button onclick="showTemplateSelector(); closeModernGuideModal();" style="
-                            padding: 12px 20px; background: linear-gradient(135deg, #f59e0b, #d97706);
-                            color: white; border: none; border-radius: 10px; cursor: pointer;
-                            font-weight: 600; transition: all 0.3s ease;
-                        " onmouseover="this.style.transform='translateY(-2px)'"
-                           onmouseout="this.style.transform='translateY(0)'">
-                            🚀 Try Templates Now
-                        </button>
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                        ${Object.entries(saleTemplates).map(([name, template]) => `
-                            <div style="
-                                background: rgba(245,158,11,0.05);
-                                border: 1px solid rgba(245,158,11,0.2);
-                                border-radius: 12px; padding: 15px; text-align: center;
-                            ">
-                                <div style="font-size: 32px; margin-bottom: 8px;">${template.icon}</div>
-                                <div style="font-weight: 600; margin-bottom: 5px; font-size: 14px;">${name}</div>
-                                <div style="font-size: 11px; opacity: 0.7;">${template.time.start}:00 ${template.time.startAmPm} - ${template.time.end}:00 ${template.time.endAmPm}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <!-- Pro Tips -->
-                <div style="margin-bottom: 30px;">
-                    <h2 style="color: #ef4444; margin-bottom: 20px; font-size: 24px;">🎯 Pro Tips</h2>
-                    <div style="
-                        background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.05));
-                        padding: 20px; border-radius: 16px; 
-                        border: 1px solid rgba(239,68,68,0.2);
-                    ">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                            <div>
-                                <h4 style="color: #ef4444; margin: 0 0 10px 0;">⌨️ Keyboard Shortcuts</h4>
-                                <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
-                                    <li>Tab key moves between form fields</li>
-                                    <li>Arrow keys navigate address suggestions</li>
-                                    <li>Enter selects highlighted suggestion</li>
-                                    <li>Escape closes suggestion dropdown</li>
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 style="color: #ef4444; margin: 0 0 10px 0;">🎨 Interface Tips</h4>
-                                <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
-                                    <li>Click theme button for dark/light modes</li>
-                                    <li>Zoom to level 16+ to see buildings</li>
-                                    <li>Use Hybrid + Roads for best view</li>
-                                    <li>Status bar shows connection status</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Best Practices -->
-                <div>
-                    <h2 style="color: #06b6d4; margin-bottom: 20px; font-size: 24px;">✅ Best Practices</h2>
-                    <div style="
-                        background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(6,182,212,0.05));
-                        padding: 20px; border-radius: 16px; 
-                        border: 1px solid rgba(6,182,212,0.2);
-                    ">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                            <div>
-                                <h4 style="color: #06b6d4; margin: 0 0 12px 0;">📍 Location & Timing</h4>
-                                <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
-                                    <li>Use exact street addresses</li>
-                                    <li>Most sales: 7 AM - 2 PM</li>
-                                    <li>Friday-Saturday for multi-day</li>
-                                    <li>Verify dates before saving</li>
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 style="color: #06b6d4; margin: 0 0 12px 0;">🛍️ Items & Descriptions</h4>
-                                <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
-                                    <li>List popular items (furniture, clothes)</li>
-                                    <li>Mention "everything must go" for moving sales</li>
-                                    <li>Include "multi-family" for neighborhood sales</li>
-                                    <li>Keep descriptions concise but informative</li>
-                                </ul>
+                            <div style="background: rgba(124,137,255,0.1); border-radius: 4px; padding: 4px 8px; font-family: monospace; font-size: 11px; color: #7c89ff;">
+                                Friday 7:00 AM - 2:00 PM & Saturday 8:00 AM - 4:00 PM
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Modern Footer -->
-            <div style="
-                background: linear-gradient(135deg, rgba(60,240,212,0.15), rgba(124,137,255,0.15));
-                padding: 25px; border-top: 1px solid rgba(60,240,212,0.3);
-                text-align: center; border-radius: 0 0 22px 22px;
-            ">
-                <p style="margin: 0 0 15px 0; font-size: 15px; color: #94a3b8; line-height: 1.5;">
-                    Professional garage sale management system<br>
-                    <strong>City of Portland, Texas</strong> • Version 8.0 Modern
-                </p>
+            <div style="background: rgba(60,240,212,0.05); border: 1px solid rgba(60,240,212,0.2); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                <h3 style="color: #3cf0d4; margin: 0 0 16px 0; text-align: center;">📝 Quick Templates</h3>
+                <p style="color: #94a3b8; text-align: center; margin: 0 0 16px 0;">Save time with pre-made templates for common garage sale types:</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                    ${Object.entries(saleTemplates).map(([name, template]) => `
+                        <div style="background: rgba(60,240,212,0.1); border: 1px solid rgba(60,240,212,0.2); border-radius: 8px; padding: 12px; text-align: center;">
+                            <div style="font-size: 20px; margin-bottom: 4px;">${template.icon}</div>
+                            <div style="color: white; font-weight: 500; font-size: 14px; margin-bottom: 2px;">${name}</div>
+                            <div style="color: #94a3b8; font-size: 11px;">${template.time.start}:00 ${template.time.startAmPm} - ${template.time.end}:00 ${template.time.endAmPm}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
 
-                <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-                    <button onclick="showTemplateSelector(); closeModernGuideModal();" style="
-                        padding: 12px 20px; background: linear-gradient(135deg, #3cf0d4, #22d3ee);
-                        color: #041311; border: none; border-radius: 10px; cursor: pointer;
-                        font-weight: 600; transition: all 0.3s ease;
-                    " onmouseover="this.style.transform='translateY(-1px)'"
-                       onmouseout="this.style.transform='translateY(0)'">
-                        📝 Try Templates
-                    </button>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px;">
+                <div>
+                    <h3 style="color: #3cf0d4; margin: 0 0 12px 0;">🎯 Pro Tips</h3>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <h4 style="color: #f59e0b; margin: 0 0 6px 0; font-size: 16px;">⌨️ Keyboard Shortcuts</h4>
+                        <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px; line-height: 1.5;">
+                            <li>Tab key moves between form fields</li>
+                            <li>Arrow keys navigate address suggestions</li>
+                            <li>Enter selects highlighted suggestion</li>
+                            <li>Escape closes suggestion dropdown</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 style="color: #f59e0b; margin: 0 0 6px 0; font-size: 16px;">🎨 Interface Tips</h4>
+                        <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px; line-height: 1.5;">
+                            <li>Click theme button for dark/light modes</li>
+                            <li>Zoom to level 16+ to see buildings</li>
+                            <li>Use Hybrid + Roads for best view</li>
+                            <li>Status bar shows connection status</li>
+                        </ul>
+                    </div>
+                </div>
 
-                    <button class="modern-close-guide-main" style="
-                        padding: 12px 20px; background: transparent;
-                        color: #94a3b8; border: 1px solid #475569; border-radius: 10px;
-                        cursor: pointer; font-weight: 500; transition: all 0.3s ease;
-                    " onmouseover="this.style.color='white'; this.style.borderColor='#64748b'"
-                       onmouseout="this.style.color='#94a3b8'; this.style.borderColor='#475569'">
-                        Close Guide
-                    </button>
+                <div>
+                    <h3 style="color: #3cf0d4; margin: 0 0 12px 0;">✅ Best Practices</h3>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <h4 style="color: #10b981; margin: 0 0 6px 0; font-size: 16px;">📍 Location & Timing</h4>
+                        <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px; line-height: 1.5;">
+                            <li>Use exact street addresses</li>
+                            <li>Most sales: 7 AM - 2 PM</li>
+                            <li>Friday-Saturday for multi-day</li>
+                            <li>Verify dates before saving</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 style="color: #10b981; margin: 0 0 6px 0; font-size: 16px;">🛍️ Items & Descriptions</h4>
+                        <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px; line-height: 1.5;">
+                            <li>List popular items (furniture, clothes)</li>
+                            <li>Mention "everything must go" for moving sales</li>
+                            <li>Include "multi-family" for neighborhood sales</li>
+                            <li>Keep descriptions concise but informative</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; padding-top: 24px; border-top: 1px solid rgba(100,116,139,0.2);">
+                <button onclick="closeModernGuideModal()" style="background: linear-gradient(135deg, #3cf0d4, #7c89ff); border: none; color: white; padding: 12px 32px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; margin-bottom: 16px;">Got It! Let's Start</button>
+                <div style="color: #64748b; font-size: 14px;">
+                    Professional garage sale management system <br>
+                    <strong style="color: #3cf0d4;">City of Portland, Texas</strong> • Version 8.0 Modern
                 </div>
             </div>
         </div>
@@ -1890,7 +1597,7 @@ function setupNetworkMonitoring() {
 
 /* ================ Modern Premium Initialization ================ */
 async function init() {
-    console.log("🏛️ Modern Stylish Garage Sale Admin v8.0");
+    console.log("🏛️ Modern Stylish Garage Sale Admin v8.0 - FIXED COORDINATES");
     console.log("🚀 Initializing premium modern system...");
 
     try {
@@ -1943,7 +1650,7 @@ async function init() {
 
         updateDescriptionPreview();
 
-        console.log("✅ Modern premium system ready!");
+        console.log("✅ Modern premium system ready with FIXED COORDINATES!");
         setModernStatus("🎉 Premium modern system ready! All enhanced features enabled.", 'success');
 
         // Welcome message
@@ -1965,4 +1672,4 @@ window.addEventListener('error', (event) => {
 window.toast = showModernToast;
 window.setStatus = setModernStatus;
 
-console.log("🚀 Modern Stylish Garage Sale Admin loaded with premium features!");
+console.log("🚀 Modern Stylish Garage Sale Admin loaded with premium features and FIXED COORDINATES!");
