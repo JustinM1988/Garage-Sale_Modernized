@@ -1,7 +1,7 @@
-// app.js — MODERN STYLISH Garage Sale Admin v8.0 - FIXED COORDINATE PROJECTION
-// City of Portland, Texas - Premium Modern Design
+// app.js — FIXED Garage Sale Admin v8.0 - SIMPLIFIED
+// City of Portland, Texas - Fixed buttons, removed templates, clean design
 
-/* ================ Wait for DOM and Dependencies ================ */
+/* =============== Wait for DOM and Dependencies =============== */
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof L === 'undefined') {
         console.error('❌ Leaflet not loaded!');
@@ -15,11 +15,11 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    console.log('🚀 Starting Modern Stylish Garage Sale Admin...');
+    console.log('🚀 Starting Garage Sale Admin...');
     init();
 });
 
-/* ================ Global State ================ */
+/* =============== Global State =============== */
 const FIELDS = { 
     address: "Address", 
     description: "Description", 
@@ -36,8 +36,7 @@ let addressSuggestions = [];
 let suggestionsDropdown = null;
 let multiDayData = [];
 
-/* ================ 🔧 COORDINATE CONVERSION FIX ================ */
-// This fixes the Web Mercator to WGS84 projection issue
+/* =============== COORDINATE CONVERSION FIX =============== */
 function webMercatorToWGS84(x, y) {
     const lng = x / 20037508.34 * 180;
     let lat = y / 20037508.34 * 180;
@@ -45,7 +44,7 @@ function webMercatorToWGS84(x, y) {
     return [lat, lng];
 }
 
-/* ================ Modern UI Utilities ================ */
+/* =============== UI Utilities =============== */
 const $ = (sel) => document.querySelector(sel);
 
 function showError(message) {
@@ -56,17 +55,18 @@ function showError(message) {
         z-index: 9999; backdrop-filter: blur(8px);
     `;
     errorDiv.innerHTML = `
-        <div style="background: rgba(239,68,68,0.95); padding: 40px; border-radius: 16px; text-align: center; color: white; max-width: 500px; backdrop-filter: blur(12px);">
-            <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
-            <h3 style="margin: 0 0 16px 0; font-size: 24px;">System Error</h3>
-            <p style="margin: 0; font-size: 16px; line-height: 1.5;">${message}</p>
-            <button onclick="location.reload()" style="margin-top: 24px; padding: 12px 24px; background: white; color: #ef4444; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Refresh Page</button>
+        <div style="background: #ef4444; color: white; padding: 20px; border-radius: 12px; text-align: center; max-width: 400px;">
+            <h3>⚠️ System Error</h3>
+            <p>${message}</p>
+            <button onclick="location.reload()" style="background: white; color: #ef4444; border: none; padding: 8px 16px; border-radius: 6px; margin-top: 12px; cursor: pointer; font-weight: bold;">
+                Reload Page
+            </button>
         </div>
     `;
     document.body.appendChild(errorDiv);
 }
 
-function showModernToast(msg, type = "info", duration = 4000) {
+function showToast(msg, type = "info", duration = 4000) {
     console.log(`📢 [${type.toUpperCase()}]: ${msg}`);
 
     // Don't show technical messages
@@ -85,18 +85,16 @@ function showModernToast(msg, type = "info", duration = 4000) {
 
     const toast = document.createElement("div");
     toast.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 18px;">${color.icon}</span>
-            <span>${msg}</span>
-        </div>
+        <span>${color.icon}</span>
+        <span>${msg}</span>
     `;
     toast.style.cssText = `
         position: fixed; bottom: 30px; right: 30px; z-index: 1000;
         background: ${color.bg}; color: white; padding: 16px 20px;
         border-radius: 12px; font-weight: 500; font-size: 15px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        backdrop-filter: blur(8px); max-width: 400px;
-        transform: translateX(100%); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        max-width: 400px; display: flex; align-items: center; gap: 8px;
+        transform: translateX(100%); transition: all 0.4s ease;
     `;
 
     document.body.appendChild(toast);
@@ -115,12 +113,12 @@ function showModernToast(msg, type = "info", duration = 4000) {
     }, duration);
 }
 
-function setModernStatus(text, type = 'info') {
+function setStatus(text, type = 'info') {
     console.log(`📊 Status [${type.toUpperCase()}]: ${text}`);
     const el = $("#status");
     if (el) {
         el.textContent = text;
-        el.className = `modern-status modern-status-${type}`;
+        el.className = `status ${type}`;
     }
     updateConnectionStatus();
 }
@@ -129,8 +127,8 @@ function updateConnectionStatus() {
     const statusEl = $("#connectionStatus");
     if (statusEl) {
         statusEl.innerHTML = isOnline ? 
-            '<span style="color: #10b981;">🌐 Connected</span>' :
-            '<span style="color: #ef4444;">⚠️ Offline</span>';
+            '🌐 Connected' :
+            '⚠️ Offline';
         statusEl.className = isOnline ? "connection-status online" : "connection-status offline";
     }
 }
@@ -153,7 +151,7 @@ function fromEpoch(ms) {
     return `${Y}-${M}-${D}`;
 }
 
-/* ================ Enhanced Description with Multi-Day Support ================ */
+/* =============== Enhanced Description with Multi-Day Support =============== */
 function composeDescription() {
     const details = $("#details")?.value?.trim() || "";
 
@@ -191,119 +189,7 @@ function updateDescriptionPreview() {
     if (preview) preview.value = composeDescription();
 }
 
-/* ================ Sale Templates with Modern Design ================ */
-const saleTemplates = {
-    'Moving Sale': {
-        description: 'Moving sale - everything must go! Furniture, appliances, household items',
-        time: { start: 7, startAmPm: 'AM', end: 4, endAmPm: 'PM' },
-        icon: '📦'
-    },
-    'Estate Sale': {
-        description: 'Estate sale - antiques, collectibles, furniture, and more',
-        time: { start: 8, startAmPm: 'AM', end: 3, endAmPm: 'PM' },
-        icon: '🏛️'
-    },
-    'Neighborhood Sale': {
-        description: 'Multi-family garage sale - clothes, toys, books, household items',
-        time: { start: 7, startAmPm: 'AM', end: 2, endAmPm: 'PM' },
-        icon: '🏘️'
-    },
-    'Holiday Sale': {
-        description: 'Holiday items, decorations, seasonal clothing and accessories',
-        time: { start: 8, startAmPm: 'AM', end: 3, endAmPm: 'PM' },
-        icon: '🎄'
-    }
-};
-
-function showTemplateSelector() {
-    const modal = document.createElement("div");
-    modal.className = "template-modal-backdrop";
-    modal.style.cssText = `
-        position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-        display: flex; align-items: center; justify-content: center;
-        z-index: 10000; backdrop-filter: blur(8px);
-    `;
-
-    modal.innerHTML = `
-        <div style="background: rgba(30,41,59,0.95); border-radius: 20px; padding: 32px; max-width: 600px; width: 90%; backdrop-filter: blur(12px); border: 1px solid rgba(60,240,212,0.3);">
-            <div style="text-align: center; margin-bottom: 24px;">
-                <h3 style="color: #3cf0d4; margin: 0 0 8px 0; font-size: 24px;">📝 Choose a Template</h3>
-                <p style="color: #94a3b8; margin: 0; font-size: 16px;">Quick start with common garage sale types</p>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                ${Object.entries(saleTemplates).map(([name, template]) => `
-                    <div class="template-card" onclick="applySaleTemplate('${name}'); closeTemplateModal();" style="
-                        background: rgba(60,240,212,0.1); border: 1px solid rgba(60,240,212,0.3); 
-                        border-radius: 12px; padding: 20px; cursor: pointer; 
-                        transition: all 0.3s ease; text-align: center;
-                    ">
-                        <div style="font-size: 32px; margin-bottom: 8px;">${template.icon}</div>
-                        <h4 style="color: #3cf0d4; margin: 0 0 8px 0; font-size: 18px;">${name}</h4>
-                        <p style="color: #cbd5e1; margin: 0 0 12px 0; font-size: 14px; line-height: 1.4;">${template.description}</p>
-                        <div style="color: #94a3b8; font-size: 12px; font-weight: 500;">
-                            ⏰ ${template.time.start}:00 ${template.time.startAmPm} - ${template.time.end}:00 ${template.time.endAmPm}
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-
-            <div style="text-align: center;">
-                <button onclick="closeTemplateModal()" style="
-                    background: rgba(100,116,139,0.2); border: 1px solid #64748b; 
-                    color: #cbd5e1; padding: 12px 24px; border-radius: 8px; 
-                    cursor: pointer; font-weight: 500;
-                ">Skip Templates</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // Add hover effects
-    modal.querySelectorAll('.template-card').forEach(card => {
-        card.addEventListener('mouseenter', () => {
-            card.style.transform = 'translateY(-4px)';
-            card.style.background = 'rgba(60,240,212,0.2)';
-            card.style.borderColor = '#3cf0d4';
-        });
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = 'translateY(0)';
-            card.style.background = 'rgba(60,240,212,0.1)';
-            card.style.borderColor = 'rgba(60,240,212,0.3)';
-        });
-    });
-
-    // Close on backdrop click
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeTemplateModal();
-    });
-
-    window.currentTemplateModal = modal;
-}
-
-function closeTemplateModal() {
-    if (window.currentTemplateModal) {
-        document.body.removeChild(window.currentTemplateModal);
-        window.currentTemplateModal = null;
-    }
-}
-
-function applySaleTemplate(templateName) {
-    const template = saleTemplates[templateName];
-    if (!template) return;
-
-    $("#details").value = template.description;
-    $("#timeStartHour").value = template.time.start;
-    $("#timeStartAmPm").value = template.time.startAmPm;
-    $("#timeEndHour").value = template.time.end;
-    $("#timeEndAmPm").value = template.time.endAmPm;
-
-    updateDescriptionPreview();
-    showModernToast(`${template.icon} Applied ${templateName} template`, "success");
-}
-
-/* ================ Multi-Day Sales Functionality ================ */
+/* =============== Multi-Day Sales Functionality =============== */
 function setupMultiDayFeature() {
     const checkbox = $("#chkMultiDay");
     const singleDayTimes = $("#single-day-times");
@@ -374,70 +260,56 @@ function renderMultiDayEntries() {
     const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
     container.innerHTML = multiDayData.map((entry, index) => `
-        <div style="background: rgba(60,240,212,0.05); border: 1px solid rgba(60,240,212,0.2); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #3cf0d4, #7c89ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">${index + 1}</div>
-                    <span style="color: #3cf0d4; font-weight: 600; font-size: 16px;">Sale Day ${index + 1}</span>
-                </div>
-                <button onclick="removeMultiDayEntry(${entry.id})" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12px;">✕</button>
+        <div class="multi-day-row">
+            <div class="day-number">
+                <span class="day-badge">${index + 1}</span>
+                <strong>Sale Day ${index + 1}</strong>
             </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px; align-items: end;">
-                <div>
-                    <label style="color: #94a3b8; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block;">Day</label>
-                    <select onchange="updateMultiDayEntry(${entry.id}, 'dayOfWeek', this.value)" style="width: 100%; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
+            <div class="day-controls">
+                <div class="day-selector">
+                    <label>Day</label>
+                    <select onchange="updateMultiDayEntry(${entry.id}, 'dayOfWeek', this.value)">
                         ${dayNames.map((day, i) => `
                             <option value="${i}" ${entry.dayOfWeek === i ? 'selected' : ''}>${day}</option>
                         `).join('')}
                     </select>
                 </div>
-                
-                <div style="display: flex; align-items: end; gap: 8px;">
-                    <div>
-                        <select onchange="updateMultiDayEntry(${entry.id}, 'startHour', this.value)" style="width: 60px; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
-                            ${Array.from({length: 12}, (_, i) => i + 1).map(h => `
-                                <option value="${h}" ${entry.startHour === h ? 'selected' : ''}>${h}</option>
-                            `).join('')}
-                        </select>
-                    </div>
-                    <span style="color: #94a3b8;">:</span>
-                    <div>
-                        <select onchange="updateMultiDayEntry(${entry.id}, 'startMin', this.value)" style="width: 60px; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
-                            <option value="0" ${entry.startMin === 0 ? 'selected' : ''}>00</option>
-                            <option value="30" ${entry.startMin === 30 ? 'selected' : ''}>30</option>
-                        </select>
-                    </div>
-                    <div>
-                        <select onchange="updateMultiDayEntry(${entry.id}, 'startAmPm', this.value)" style="width: 60px; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
-                            <option value="AM" ${entry.startAmPm === 'AM' ? 'selected' : ''}>AM</option>
-                            <option value="PM" ${entry.startAmPm === 'PM' ? 'selected' : ''}>PM</option>
-                        </select>
-                    </div>
-                    
-                    <span style="color: #94a3b8; margin: 0 8px;">to</span>
-
-                    <div>
-                        <select onchange="updateMultiDayEntry(${entry.id}, 'endHour', this.value)" style="width: 60px; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
-                            ${Array.from({length: 12}, (_, i) => i + 1).map(h => `
-                                <option value="${h}" ${entry.endHour === h ? 'selected' : ''}>${h}</option>
-                            `).join('')}
-                        </select>
-                    </div>
-                    <span style="color: #94a3b8;">:</span>
-                    <div>
-                        <select onchange="updateMultiDayEntry(${entry.id}, 'endMin', this.value)" style="width: 60px; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
-                            <option value="0" ${entry.endMin === 0 ? 'selected' : ''}>00</option>
-                            <option value="30" ${entry.endMin === 30 ? 'selected' : ''}>30</option>
-                        </select>
-                    </div>
-                    <div>
-                        <select onchange="updateMultiDayEntry(${entry.id}, 'endAmPm', this.value)" style="width: 60px; padding: 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(100,116,139,0.3); border-radius: 8px; color: white;">
-                            <option value="AM" ${entry.endAmPm === 'AM' ? 'selected' : ''}>AM</option>
-                            <option value="PM" ${entry.endAmPm === 'PM' ? 'selected' : ''}>PM</option>
-                        </select>
-                    </div>
+                <div class="time-group">
+                    <select onchange="updateMultiDayEntry(${entry.id}, 'startHour', this.value)">
+                        ${Array.from({length: 12}, (_, i) => i + 1).map(h => `
+                            <option value="${h}" ${entry.startHour === h ? 'selected' : ''}>${h}</option>
+                        `).join('')}
+                    </select>
+                    :
+                    <select onchange="updateMultiDayEntry(${entry.id}, 'startMin', this.value)">
+                        <option value="0" ${entry.startMin === 0 ? 'selected' : ''}>00</option>
+                        <option value="30" ${entry.startMin === 30 ? 'selected' : ''}>30</option>
+                    </select>
+                    <select onchange="updateMultiDayEntry(${entry.id}, 'startAmPm', this.value)">
+                        <option value="AM" ${entry.startAmPm === 'AM' ? 'selected' : ''}>AM</option>
+                        <option value="PM" ${entry.startAmPm === 'PM' ? 'selected' : ''}>PM</option>
+                    </select>
                 </div>
+                to
+                <div class="time-group">
+                    <select onchange="updateMultiDayEntry(${entry.id}, 'endHour', this.value)">
+                        ${Array.from({length: 12}, (_, i) => i + 1).map(h => `
+                            <option value="${h}" ${entry.endHour === h ? 'selected' : ''}>${h}</option>
+                        `).join('')}
+                    </select>
+                    :
+                    <select onchange="updateMultiDayEntry(${entry.id}, 'endMin', this.value)">
+                        <option value="0" ${entry.endMin === 0 ? 'selected' : ''}>00</option>
+                        <option value="30" ${entry.endMin === 30 ? 'selected' : ''}>30</option>
+                    </select>
+                    <select onchange="updateMultiDayEntry(${entry.id}, 'endAmPm', this.value)">
+                        <option value="AM" ${entry.endAmPm === 'AM' ? 'selected' : ''}>AM</option>
+                        <option value="PM" ${entry.endAmPm === 'PM' ? 'selected' : ''}>PM</option>
+                    </select>
+                </div>
+                <button class="btn-remove-day" onclick="removeMultiDayEntry(${entry.id})" title="Remove this day">
+                    ✕
+                </button>
             </div>
         </div>
     `).join('');
@@ -459,10 +331,10 @@ window.removeMultiDayEntry = function(id) {
     multiDayData = multiDayData.filter(e => e.id != id);
     renderMultiDayEntries();
     updateDescriptionPreview();
-    showModernToast("Day removed", "info");
+    showToast("Day removed", "info");
 };
 
-/* ================ Modern Address Autocomplete System ================ */
+/* =============== Address Autocomplete System =============== */
 async function setupAddressAutocomplete() {
     const addressField = $("#address");
     const searchField = $("#addressSearch");
@@ -487,7 +359,7 @@ async function setupAddressAutocomplete() {
     if (addressField) setupFieldAutocomplete(addressField);
     if (searchField) setupFieldAutocomplete(searchField);
 
-    console.log("✅ Modern address autocomplete ready");
+    console.log("✅ Address autocomplete ready");
 }
 
 function setupFieldAutocomplete(field) {
@@ -548,9 +420,9 @@ async function searchAddressSuggestions(query, field) {
             );
 
             if (filteredSuggestions.length > 0) {
-                showModernSuggestions(filteredSuggestions, field);
+                showSuggestions(filteredSuggestions, field);
             } else if (data.suggestions.length > 0) {
-                showModernSuggestions(data.suggestions.slice(0, 4), field);
+                showSuggestions(data.suggestions.slice(0, 4), field);
             }
         } else {
             hideSuggestions();
@@ -562,7 +434,7 @@ async function searchAddressSuggestions(query, field) {
     }
 }
 
-function showModernSuggestions(suggestions, field) {
+function showSuggestions(suggestions, field) {
     const rect = field.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
@@ -572,22 +444,18 @@ function showModernSuggestions(suggestions, field) {
     suggestionsDropdown.style.width = Math.max(rect.width, 320) + 'px';
 
     suggestionsDropdown.innerHTML = suggestions.map((suggestion, index) => `
-        <div class="modern-suggestion-item" 
-             data-index="${index}" 
-             data-text="${suggestion.text}" 
-             data-magic="${suggestion.magicKey || ''}"
-             style="padding: 12px 16px; cursor: pointer; border-bottom: 1px solid rgba(100,116,139,0.1); display: flex; align-items: center; gap: 12px;">
-            <span style="color: #3cf0d4; font-size: 16px;">📍</span>
+        <div class="suggestion-item" data-text="${suggestion.text}" data-magic="${suggestion.magicKey}" data-index="${index}">
+            <span>📍</span>
             <div>
-                <div style="color: white; font-weight: 500;">${suggestion.text}</div>
-                <div style="color: #94a3b8; font-size: 12px;">📍 Address suggestion</div>
+                <strong>${suggestion.text}</strong>
+                <small>📍 Address suggestion</small>
             </div>
         </div>
     `).join('');
 
-    suggestionsDropdown.querySelectorAll('.modern-suggestion-item').forEach(item => {
+    suggestionsDropdown.querySelectorAll('.suggestion-item').forEach(item => {
         item.addEventListener('mouseenter', () => {
-            suggestionsDropdown.querySelectorAll('.modern-suggestion-item').forEach(i => {
+            suggestionsDropdown.querySelectorAll('.suggestion-item').forEach(i => {
                 i.classList.remove('suggestion-selected');
                 i.style.background = 'transparent';
             });
@@ -617,7 +485,7 @@ function hideSuggestions() {
 }
 
 function selectNextSuggestion(direction) {
-    const items = suggestionsDropdown?.querySelectorAll('.modern-suggestion-item');
+    const items = suggestionsDropdown?.querySelectorAll('.suggestion-item');
     if (!items) return;
 
     const current = suggestionsDropdown.querySelector('.suggestion-selected');
@@ -638,7 +506,7 @@ function selectNextSuggestion(direction) {
 }
 
 async function selectSuggestion(text, magicKey, field) {
-    console.log("🏠 Selected modern suggestion:", text);
+    console.log("🏠 Selected suggestion:", text);
 
     field.value = text;
     hideSuggestions();
@@ -664,10 +532,7 @@ async function selectSuggestion(text, magicKey, field) {
 
             window.searchMarker = L.marker(latlng, {
                 icon: L.divIcon({
-                    html: `
-                        <div style="background: #3cf0d4; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(60,240,212,0.4);">📍</div>
-                        <div style="position: absolute; top: -8px; left: -8px; width: 44px; height: 44px; border: 2px solid #3cf0d4; border-radius: 50%; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-                    `,
+                    html: '<div style="background: #3b82f6; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">📍</div>',
                     iconSize: [28, 28],
                     iconAnchor: [14, 14]
                 })
@@ -680,160 +545,19 @@ async function selectSuggestion(text, magicKey, field) {
                 }
             }, 3500);
 
-            showModernToast("📍 Address located", "success");
+            showToast("📍 Address located", "success");
         }
     } catch (error) {
         console.warn("⚠️ Geocoding failed for suggestion:", error);
     }
 }
 
-/* ================ Modern Building Footprints + Click for Address ================ */
-async function loadBuildingFootprints(bounds) {
-    if (!buildingsLayer) {
-        buildingsLayer = L.layerGroup().addTo(map);
-    }
-
-    buildingsLayer.clearLayers();
-
-    try {
-        const mapBounds = bounds || map.getBounds();
-        const bbox = `${mapBounds.getSouth()},${mapBounds.getWest()},${mapBounds.getNorth()},${mapBounds.getEast()}`;
-
-        const overpassQuery = `
-            [out:json][timeout:10];
-            (way["building"](${bbox});relation["building"](${bbox}););
-            out geom;
-        `;
-
-        const response = await fetch('https://overpass-api.de/api/interpreter', {
-            method: 'POST',
-            body: overpassQuery,
-            headers: { 'Content-Type': 'text/plain' }
-        });
-
-        if (!response.ok) throw new Error('Building data unavailable');
-
-        const data = await response.json();
-        console.log(`🏠 Processing ${data.elements.length} buildings`);
-
-        let buildingsAdded = 0;
-
-        data.elements.forEach(element => {
-            if (element.type === 'way' && element.geometry && element.geometry.length > 2) {
-                try {
-                    const coords = element.geometry.map(node => [node.lat, node.lon]);
-
-                    const polygon = L.polygon(coords, {
-                        color: '#3cf0d4',
-                        weight: 2,
-                        opacity: 0.8,
-                        fillColor: '#3cf0d4',
-                        fillOpacity: 0.12,
-                        className: 'modern-building-footprint'
-                    });
-
-                    polygon.on('click', async function(e) {
-                        const latlng = e.latlng;
-                        await getModernAddressForLocation(latlng, polygon);
-                    });
-
-                    // Hover effects
-                    polygon.on('mouseover', function() {
-                        this.setStyle({
-                            fillOpacity: 0.25,
-                            weight: 3
-                        });
-                    });
-
-                    polygon.on('mouseout', function() {
-                        this.setStyle({
-                            fillOpacity: 0.12,
-                            weight: 2
-                        });
-                    });
-
-                    polygon.addTo(buildingsLayer);
-                    buildingsAdded++;
-
-                } catch (buildingError) {
-                    // Skip problematic buildings
-                }
-            }
-        });
-
-        console.log(`✅ Added ${buildingsAdded} modern building footprints`);
-
-    } catch (error) {
-        console.warn("⚠️ Buildings unavailable:", error);
-    }
-}
-
-async function getModernAddressForLocation(latlng, polygon) {
-    try {
-        const url = `https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?location=${latlng.lng},${latlng.lat}&f=json`;
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.address && data.address.Match_addr) {
-            const address = data.address.Match_addr;
-
-            polygon.bindPopup(`
-                <div style="background: rgba(30,41,59,0.95); border-radius: 12px; padding: 16px; backdrop-filter: blur(12px); min-width: 200px;">
-                    <div style="text-align: center; margin-bottom: 16px;">
-                        <span style="font-size: 32px;">🏠</span>
-                    </div>
-                    
-                    <h4 style="color: #3cf0d4; margin: 0 0 8px 0; text-align: center;">Building Found</h4>
-                    <p style="color: #94a3b8; font-size: 14px; margin: 0 0 16px 0; text-align: center;">Click to use this address</p>
-                    
-                    <div style="background: rgba(60,240,212,0.1); border: 1px solid rgba(60,240,212,0.3); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-                        <div style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">📍 ADDRESS</div>
-                        <div style="color: white; font-weight: 500;">${address}</div>
-                    </div>
-
-                    <button onclick="useThisModernAddress('${address.replace(/'/g, "\\'")}')" style="
-                        width: 100%; background: linear-gradient(135deg, #3cf0d4, #7c89ff); 
-                        border: none; color: white; padding: 12px; border-radius: 8px; 
-                        font-weight: 600; cursor: pointer; font-size: 14px;
-                    ">Use This Address</button>
-                </div>
-            `).openPopup();
-
-            console.log("🏠 Found modern building address:", address);
-        } else {
-            polygon.bindPopup(`
-                <div style="text-align: center; padding: 16px;">
-                    <span style="font-size: 32px;">🏠</span>
-                    <h4 style="color: #3cf0d4; margin: 8px 0;">Building</h4>
-                    <p style="color: #94a3b8; margin: 0;">Address not available for this location</p>
-                </div>
-            `).openPopup();
-        }
-    } catch (error) {
-        console.warn("⚠️ Address lookup failed:", error);
-    }
-}
-
-window.useThisModernAddress = function(address) {
-    const addressField = $("#address");
-    if (addressField && inNewMode) {
-        addressField.value = address;
-        showModernToast("📋 Address copied to form", "success");
-        map.closePopup();
-        updateDescriptionPreview();
-    } else {
-        showModernToast("💡 Click 'New Sale' first, then click a building", "info");
-        map.closePopup();
-    }
-};
-
-/* ================ Enhanced Modern Map ================ */
+/* =============== Enhanced Map =============== */
 async function initMap() {
-    console.log("🗺️ Initializing modern map system...");
+    console.log("🗺️ Initializing map system...");
 
     try {
-        showModernLoadingOverlay("Loading modern map system...");
+        showLoadingOverlay("Loading map system...");
 
         map = L.map('map', {
             center: [27.876, -97.323],
@@ -844,7 +568,7 @@ async function initMap() {
             attributionControl: true
         });
 
-        // Modern enhanced layers
+        // Clean, professional layers
         const baseLayers = {
             "🗺️ Street Map": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors',
@@ -867,71 +591,43 @@ async function initMap() {
             })
         };
 
-        // Start with modern Hybrid + Roads
+        // Start with Hybrid + Roads
         baseLayers["🛰️ Hybrid + Roads"].addTo(map);
         L.control.layers(baseLayers).addTo(map);
 
-        // Modern custom garage sale icon
-        window.modernGarageSaleIcon = L.divIcon({
-            className: 'modern-garage-sale-icon',
-            html: `
-                <div style="position: relative;">
-                    <div style="background: linear-gradient(135deg, #3cf0d4, #7c89ff); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(60,240,212,0.4); border: 3px solid white;">🏷️</div>
-                    <div style="position: absolute; top: -2px; left: -2px; width: 40px; height: 40px; border: 2px solid #3cf0d4; border-radius: 50%; animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite; opacity: 0.3;"></div>
-                    <div style="position: absolute; top: -4px; left: -4px; width: 44px; height: 44px; border: 1px solid #3cf0d4; border-radius: 50%; animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite; animation-delay: 1s; opacity: 0.2;"></div>
-                </div>
-            `,
+        // Simple, clean garage sale icon (no animations)
+        window.garageSaleIcon = L.divIcon({
+            className: 'garage-sale-icon',
+            html: '<div style="background: linear-gradient(135deg, #3cf0d4, #7c89ff); color: #041311; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.4); cursor: pointer;">🏷️</div>',
             iconSize: [36, 36],
             iconAnchor: [18, 18]
         });
 
         map.on('click', onMapClick);
         map.on('mousemove', onMapMouseMove);
-        map.on('zoomend', onMapZoom);
-        map.on('moveend', onMapMove);
 
         await Promise.all([
             loadGarageSales(),
-            loadBuildingFootprints()
+            setupAddressAutocomplete()
         ]);
 
-        await setupAddressAutocomplete();
+        hideLoadingOverlay();
 
-        hideModernLoadingOverlay();
-
-        console.log("✅ Modern map system ready");
-        setModernStatus("🚀 Modern system ready with all premium features", 'success');
+        console.log("✅ Map system ready");
+        setStatus("🚀 System ready - click 'New Sale' to add garage sales", 'success');
 
     } catch (error) {
-        hideModernLoadingOverlay();
+        hideLoadingOverlay();
         console.error("❌ Map initialization failed:", error);
-        setModernStatus("Failed to initialize map. Please refresh.", 'error');
+        setStatus("Failed to initialize map. Please refresh.", 'error');
     }
 }
 
-function onMapZoom(e) {
-    const zoom = map.getZoom();
-    if (zoom >= 16) {
-        loadBuildingFootprints();
-    } else {
-        if (buildingsLayer) buildingsLayer.clearLayers();
-    }
-}
-
-function onMapMove(e) {
-    if (map.getZoom() >= 16) {
-        clearTimeout(window.moveTimeout);
-        window.moveTimeout = setTimeout(() => {
-            loadBuildingFootprints();
-        }, 1200);
-    }
-}
-
-function showModernLoadingOverlay(message = "Loading...") {
-    let overlay = $("#modern-loading-overlay");
+function showLoadingOverlay(message = "Loading...") {
+    let overlay = $("#loading-overlay");
     if (!overlay) {
         overlay = document.createElement("div");
-        overlay.id = "modern-loading-overlay";
+        overlay.id = "loading-overlay";
         overlay.style.cssText = `
             position: fixed; inset: 0; 
             background: rgba(0,0,0,0.85);
@@ -943,25 +639,31 @@ function showModernLoadingOverlay(message = "Loading...") {
 
     overlay.innerHTML = `
         <div style="text-align: center; color: white;">
-            <div style="font-size: 48px; margin-bottom: 16px; animation: spin 2s linear infinite;">⚙️</div>
-            <div style="font-size: 18px; font-weight: 500;">${message}</div>
+            <div style="width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid #3cf0d4; border-radius: 50%; margin: 0 auto 16px; animation: spin 1s linear infinite;"></div>
+            <div style="font-size: 16px; font-weight: 600;">${message}</div>
         </div>
+        <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        </style>
     `;
     overlay.style.display = "flex";
 }
 
-function hideModernLoadingOverlay() {
-    const overlay = $("#modern-loading-overlay");
+function hideLoadingOverlay() {
+    const overlay = $("#loading-overlay");
     if (overlay) overlay.style.display = "none";
 }
 
-/* ================ 🔧 FIXED Modern Garage Sales Loading ================ */
+/* =============== FIXED Garage Sales Loading =============== */
 async function loadGarageSales() {
-    console.log("🔄 Loading garage sales with modern system...");
+    console.log("🔄 Loading garage sales...");
 
     try {
         const queryUrl = `${CONFIG.LAYER_URL}/query?where=1%3D1&outFields=*&returnGeometry=true&f=json`;
-        console.log("🌐 Using modern URL:", queryUrl);
+        console.log("🌐 Using URL:", queryUrl);
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -978,7 +680,7 @@ async function loadGarageSales() {
         }
 
         const data = await response.json();
-        console.log("📊 Modern ArcGIS Response:", data);
+        console.log("📊 ArcGIS Response:", data);
 
         if (data.error) {
             console.error("❌ ArcGIS Error:", data.error);
@@ -994,31 +696,31 @@ async function loadGarageSales() {
         let markersAdded = 0;
         garageSalesData.forEach((feature, index) => {
             try {
-                if (addModernGarageSaleMarker(feature, index)) {
+                if (addGarageSaleMarker(feature, index)) {
                     markersAdded++;
                 }
             } catch (error) {
-                console.warn(`⚠️ Failed to add modern marker ${index}:`, error);
+                console.warn(`⚠️ Failed to add marker ${index}:`, error);
             }
         });
 
         if (markersAdded > 0) {
             featureLayer.addTo(map);
-            console.log(`✅ Added ${markersAdded} modern garage sale markers`);
+            console.log(`✅ Added ${markersAdded} garage sale markers`);
         }
 
         _featureCount = garageSalesData.length;
-        updateModernStats();
+        updateStats();
 
         if (_featureCount === 0) {
-            setModernStatus("No garage sales found. Click 'New Sale' to add the first one.", 'info');
+            setStatus("No garage sales found. Click 'New Sale' to add the first one.", 'info');
         } else {
-            setModernStatus(`${_featureCount} garage sales loaded successfully.`, 'success');
+            setStatus(`${_featureCount} garage sales loaded successfully.`, 'success');
         }
 
     } catch (error) {
         console.error("❌ Failed to load garage sales:", error);
-        setModernStatus("Could not load existing garage sales. You can still add new ones.", 'warning');
+        setStatus("Could not load existing garage sales. You can still add new ones.", 'warning');
 
         if (!featureLayer) {
             featureLayer = L.layerGroup().addTo(map);
@@ -1026,28 +728,28 @@ async function loadGarageSales() {
     }
 }
 
-/* ================ 🔧 FIXED Modern Garage Sale Marker with Coordinate Conversion ================ */
-function addModernGarageSaleMarker(feature, index) {
+/* =============== FIXED Garage Sale Marker with Coordinate Conversion =============== */
+function addGarageSaleMarker(feature, index) {
     const geom = feature.geometry;
     const attrs = feature.attributes;
 
     if (!geom || typeof geom.y !== 'number' || typeof geom.x !== 'number') {
-        console.warn(`⚠️ Invalid geometry for modern feature ${index}`);
+        console.warn(`⚠️ Invalid geometry for feature ${index}`);
         return false;
     }
 
-    // 🔧 FIX: CONVERT COORDINATES FROM WEB MERCATOR TO WGS84
+    // FIX: CONVERT COORDINATES FROM WEB MERCATOR TO WGS84
     const [lat, lng] = webMercatorToWGS84(geom.x, geom.y);
     
     console.log(`📍 Feature ${index}: Web Mercator (${geom.x}, ${geom.y}) -> WGS84 (${lat}, ${lng})`);
 
     const marker = L.marker([lat, lng], { 
-        icon: window.modernGarageSaleIcon,
+        icon: window.garageSaleIcon,
         title: attrs[FIELDS.address] || `Garage Sale ${index + 1}`,
         zIndexOffset: 1000
     });
 
-    const popupContent = createModernPopupContent(attrs);
+    const popupContent = createPopupContent(attrs);
     marker.bindPopup(popupContent);
 
     marker.on('click', () => {
@@ -1060,44 +762,34 @@ function addModernGarageSaleMarker(feature, index) {
     return true;
 }
 
-function createModernPopupContent(attributes) {
+function createPopupContent(attributes) {
     const address = attributes[FIELDS.address] || "No address";
     const description = attributes[FIELDS.description] || "No description";
     const startDate = attributes[FIELDS.start] ? 
         new Date(attributes[FIELDS.start]).toLocaleDateString() : "No date";
 
     return `
-        <div style="background: rgba(30,41,59,0.95); border-radius: 16px; padding: 20px; backdrop-filter: blur(12px); min-width: 250px;">
-            <div style="text-align: center; margin-bottom: 16px;">
-                <span style="font-size: 40px;">🏷️</span>
-            </div>
-            
-            <h4 style="color: #3cf0d4; margin: 0 0 4px 0; text-align: center; font-size: 18px;">${address}</h4>
-            <p style="color: #94a3b8; font-size: 14px; margin: 0 0 16px 0; text-align: center;">Garage Sale Location</p>
-            
-            <div style="space-y: 12px;">
-                <div style="background: rgba(60,240,212,0.1); border: 1px solid rgba(60,240,212,0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                        <span style="color: #3cf0d4;">📅</span>
-                        <span style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">DATE</span>
-                    </div>
-                    <div style="color: white; font-weight: 500;">${startDate}</div>
-                </div>
-                
-                <div style="background: rgba(60,240,212,0.1); border: 1px solid rgba(60,240,212,0.3); border-radius: 8px; padding: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                        <span style="color: #3cf0d4;">🛍️</span>
-                        <span style="color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">ITEMS</span>
-                    </div>
-                    <div style="color: white; font-weight: 500;">${description}</div>
+        <div style="padding: 4px; min-width: 200px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span style="font-size: 18px;">🏷️</span>
+                <div>
+                    <h4 style="margin: 0; color: #3cf0d4; font-weight: 700; font-size: 14px;">${address}</h4>
+                    <small style="color: #94a3b8;">Garage Sale Location</small>
                 </div>
             </div>
-
-            <button onclick="editSale(${attributes[objectIdField]})" style="
-                width: 100%; background: linear-gradient(135deg, #3cf0d4, #7c89ff); 
-                border: none; color: white; padding: 12px; border-radius: 8px; 
-                font-weight: 600; cursor: pointer; margin-top: 16px; font-size: 14px;
-            ">✏️ Edit This Sale</button>
+            <div style="display: flex; gap: 12px; margin-bottom: 8px; font-size: 12px;">
+                <div>
+                    <span style="color: #3cf0d4;">📅 DATE</span><br>
+                    <strong style="color: #f1f5f9;">${startDate}</strong>
+                </div>
+                <div>
+                    <span style="color: #3cf0d4;">🛍️ ITEMS</span><br>
+                    <strong style="color: #f1f5f9;">${description}</strong>
+                </div>
+            </div>
+            <button onclick="editSale(${attributes[objectIdField]})" style="background: #3cf0d4; color: #041311; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;">
+                ✏️ Edit Sale
+            </button>
         </div>
     `;
 }
@@ -1112,14 +804,14 @@ window.editSale = function(objectId) {
     }
 };
 
-/* ================ Modern Map Event Handlers ================ */
+/* =============== Map Event Handlers =============== */
 function onMapClick(e) {
     if (!inNewMode) {
-        showModernToast("💡 Click 'New Sale' first to add a garage sale", "info");
+        showToast("💡 Click 'New Sale' first to add a garage sale", "info");
         return;
     }
 
-    placeModernNewSale(e.latlng);
+    placeNewSale(e.latlng);
 }
 
 function onMapMouseMove(e) {
@@ -1129,8 +821,8 @@ function onMapMouseMove(e) {
     }
 }
 
-function placeModernNewSale(latlng) {
-    console.log("📍 Placing modern new sale at:", latlng);
+function placeNewSale(latlng) {
+    console.log("📍 Placing new sale at:", latlng);
 
     if (editMarker) {
         map.removeLayer(editMarker);
@@ -1138,13 +830,7 @@ function placeModernNewSale(latlng) {
 
     editMarker = L.marker(latlng, {
         icon: L.divIcon({
-            html: `
-                <div style="position: relative;">
-                    <div style="background: linear-gradient(135deg, #10b981, #3cf0d4); border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(16,185,129,0.4); border: 4px solid white;">📍</div>
-                    <div style="position: absolute; top: -4px; left: -4px; width: 56px; height: 56px; border: 2px solid #10b981; border-radius: 50%; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-                    <div style="position: absolute; top: -8px; left: -8px; width: 64px; height: 64px; border: 1px solid #10b981; border-radius: 50%; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; animation-delay: 1s;"></div>
-                </div>
-            `,
+            html: '<div style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 3px solid white; box-shadow: 0 4px 16px rgba(0,0,0,0.4);">📍</div>',
             iconSize: [48, 48],
             iconAnchor: [24, 24]
         }),
@@ -1155,8 +841,8 @@ function placeModernNewSale(latlng) {
         $("#address")?.focus();
     }, 100);
 
-    setModernStatus("🎯 Perfect! Location placed. Fill out the details below.", 'success');
-    showModernToast("📍 Location placed! Now fill out the form.", "success");
+    setStatus("🎯 Perfect! Location placed. Fill out the details below.", 'success');
+    showToast("📍 Location placed! Now fill out the form.", "success");
 
     reverseGeocode(latlng);
 }
@@ -1169,26 +855,27 @@ async function reverseGeocode(latlng) {
 
         if (data.address && data.address.Match_addr) {
             $("#address").value = data.address.Match_addr;
-            console.log("🏠 Auto-filled modern address:", data.address.Match_addr);
-            showModernToast("🏠 Address found automatically!", "info");
+            console.log("🏠 Auto-filled address:", data.address.Match_addr);
+            showToast("🏠 Address found automatically!", "info");
         }
     } catch (error) {
         console.warn("⚠️ Reverse geocoding failed:", error);
     }
 }
 
-/* ================ Modern Core Functions ================ */
-function updateModernStats() {
+/* =============== Core Functions =============== */
+function updateStats() {
     try {
         $("#totalSales").textContent = garageSalesData.length.toString();
         $("#weekendSales").textContent = "0"; // Simplified for demo
     } catch (error) {
-        console.warn("⚠️ Modern stats update failed:", error);
+        console.warn("⚠️ Stats update failed:", error);
     }
 }
 
+// FIXED: Simplified enterAddMode without template selector
 function enterAddMode() {
-    console.log("🆕 Entering modern add mode...");
+    console.log("🆕 Entering add mode...");
 
     inNewMode = true;
 
@@ -1201,11 +888,11 @@ function enterAddMode() {
         editMarker = null;
     }
 
-    setModernStatus("✨ Great! Now click anywhere on the map to place your garage sale.", 'info');
+    setStatus("✨ Great! Now click anywhere on the map to place your garage sale.", 'info');
     $("#coordinates").textContent = "Click map to place garage sale";
 
-    console.log("✅ Modern add mode activated");
-    showModernToast("✨ Click anywhere on the map to place your sale", "info");
+    console.log("✅ Add mode activated");
+    showToast("✨ Click anywhere on the map to place your sale", "info");
 }
 
 function cancelEditing() {
@@ -1221,8 +908,8 @@ function cancelEditing() {
     }
 
     clearForm();
-    setModernStatus("🏠 Ready to manage garage sales. Everything looks great!", 'info');
-    showModernToast("Editing cancelled", "info");
+    setStatus("🏠 Ready to manage garage sales. Everything looks great!", 'info');
+    showToast("Editing cancelled", "info");
 }
 
 function clearForm() {
@@ -1242,7 +929,7 @@ function clearForm() {
     updateDescriptionPreview();
 }
 
-/* ================ 🔧 FIXED Load for Edit with Coordinate Conversion ================ */
+/* =============== FIXED Load for Edit with Coordinate Conversion =============== */
 function loadForEdit(feature) {
     selectedFeature = feature;
     inNewMode = false;
@@ -1260,17 +947,12 @@ function loadForEdit(feature) {
 
     if (editMarker) map.removeLayer(editMarker);
 
-    // 🔧 FIX: CONVERT COORDINATES HERE TOO
+    // FIX: CONVERT COORDINATES HERE TOO
     const [lat, lng] = webMercatorToWGS84(geom.x, geom.y);
 
     editMarker = L.marker([lat, lng], {
         icon: L.divIcon({
-            html: `
-                <div style="position: relative;">
-                    <div style="background: linear-gradient(135deg, #f59e0b, #eab308); border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(245,158,11,0.4); border: 4px solid white;">✏️</div>
-                    <div style="position: absolute; top: -4px; left: -4px; width: 56px; height: 56px; border: 2px solid #f59e0b; border-radius: 50%; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-                </div>
-            `,
+            html: '<div style="background: #f59e0b; color: #451a03; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 3px solid white; box-shadow: 0 4px 16px rgba(0,0,0,0.4);">✏️</div>',
             iconSize: [48, 48],
             iconAnchor: [24, 24]
         }),
@@ -1280,10 +962,10 @@ function loadForEdit(feature) {
     map.flyTo([lat, lng], 17, { duration: 1.2 });
 
     const address = attrs[FIELDS.address] || "Unknown location";
-    setModernStatus(`✏️ Editing: ${address}. Make your changes and save.`, 'info');
+    setStatus(`✏️ Editing: ${address}. Make your changes and save.`, 'info');
 
     updateDescriptionPreview();
-    showModernToast("✏️ Editing garage sale", "info");
+    showToast("✏️ Editing garage sale", "info");
 }
 
 async function onSave() {
@@ -1291,24 +973,24 @@ async function onSave() {
     const startDate = $("#dateStart").value;
 
     if (!address) {
-        showModernToast("⚠️ Address is required", "warning");
+        showToast("⚠️ Address is required", "warning");
         $("#address").focus();
         return;
     }
 
     if (!startDate) {
-        showModernToast("⚠️ Start date is required", "warning");
+        showToast("⚠️ Start date is required", "warning");
         $("#dateStart").focus();
         return;
     }
 
     if (!editMarker) {
-        showModernToast("⚠️ Please place a location on the map first", "warning");
+        showToast("⚠️ Please place a location on the map first", "warning");
         return;
     }
 
     try {
-        showModernLoadingOverlay("Saving your garage sale...");
+        showLoadingOverlay("Saving your garage sale...");
 
         const description = composeDescription();
         const latlng = editMarker.getLatLng();
@@ -1320,8 +1002,6 @@ async function onSave() {
             [FIELDS.end]: toEpochMaybe($("#dateEnd").value)
         };
 
-        // Note: We save coordinates as WGS84 but ArcGIS might convert them
-        // The service should handle this automatically
         const geometry = {
             x: latlng.lng,
             y: latlng.lat,
@@ -1347,22 +1027,22 @@ async function onSave() {
         });
 
         const result = await response.json();
-        hideModernLoadingOverlay();
+        hideLoadingOverlay();
 
         if (result.error || !(result.addResults?.[0]?.success || result.updateResults?.[0]?.success)) {
             throw new Error(result.error?.message || "Save operation failed");
         }
 
         const successMessage = selectedFeature ? "🎉 Garage sale updated!" : "🎉 Garage sale added!";
-        showModernToast(successMessage, "success");
+        showToast(successMessage, "success");
 
         await loadGarageSales();
         cancelEditing();
 
     } catch (error) {
-        hideModernLoadingOverlay();
-        console.error("❌ Modern save failed:", error);
-        showModernToast(`❌ Save failed: ${error.message}`, "error");
+        hideLoadingOverlay();
+        console.error("❌ Save failed:", error);
+        showToast(`❌ Save failed: ${error.message}`, "error");
     }
 }
 
@@ -1375,13 +1055,13 @@ function cycleTheme() {
     document.documentElement.setAttribute("data-theme", next);
     localStorage.setItem('preferred_theme', next);
 
-    showModernToast(`🎨 Theme: ${next}`, "info");
+    showToast(`🎨 Theme: ${next}`, "info");
 }
 
-/* ================ Modern Enhanced Guide ================ */
-function showModernGuide() {
+/* =============== Simple Help Guide =============== */
+function showGuide() {
     const modalBackdrop = document.createElement("div");
-    modalBackdrop.className = "modern-guide-modal-backdrop";
+    modalBackdrop.className = "guide-modal-backdrop";
     modalBackdrop.style.cssText = `
         position: fixed; inset: 0; background: rgba(0,0,0,0.9);
         display: flex; align-items: center; justify-content: center;
@@ -1389,216 +1069,103 @@ function showModernGuide() {
     `;
 
     modalBackdrop.innerHTML = `
-        <div style="background: rgba(30,41,59,0.95); border-radius: 20px; padding: 40px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; backdrop-filter: blur(12px); border: 1px solid rgba(60,240,212,0.3);">
-            <div style="text-align: center; margin-bottom: 32px;">
-                <button onclick="closeModernGuideModal()" style="position: absolute; top: 20px; right: 20px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">✕ Close</button>
-                
-                <div style="font-size: 48px; margin-bottom: 16px;">🏷️</div>
-                <h2 style="color: #3cf0d4; margin: 0 0 8px 0; font-size: 32px;">Ultimate Garage Sale Manager</h2>
-                <div style="background: linear-gradient(135deg, #3cf0d4, #7c89ff); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 16px; font-weight: 600;">
-                    Professional-grade system for the City of Portland, Texas
+        <div class="glass" style="width: min(800px, 95vw); max-height: 90vh; border-radius: 16px; overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--line);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 24px;">🏷️</span>
+                    <h2 style="margin: 0; font-size: 18px; color: var(--text);">Garage Sale Manager Guide</h2>
                 </div>
+                <button class="close-guide-btn" style="background: transparent; border: none; color: var(--text); font-size: 24px; cursor: pointer; padding: 8px; border-radius: 6px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">×</button>
             </div>
+            <div style="padding: 24px; color: var(--text); max-height: 60vh; overflow-y: auto;">
+                <h3 style="color: var(--accent); margin-bottom: 12px;">🚀 Quick Start</h3>
+                <ol style="margin-left: 20px; line-height: 1.6;">
+                    <li><strong>Click "New Sale"</strong> - Start adding a garage sale</li>
+                    <li><strong>Click the Map</strong> - Place your sale location</li>
+                    <li><strong>Fill the Form</strong> - Add address, date, and items</li>
+                    <li><strong>Click "Save"</strong> - Your sale is added!</li>
+                </ol>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px;">
-                <div style="text-align: center;">
-                    <div style="font-size: 32px; margin-bottom: 8px;">🚀</div>
-                    <h3 style="color: #3cf0d4; margin: 0 0 8px 0;">Quick Start (60 Seconds)</h3>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
-                        <div style="display: flex; align-items: center; gap: 12px; background: rgba(60,240,212,0.1); border-radius: 8px; padding: 12px;">
-                            <div style="background: #3cf0d4; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">1</div>
-                            <div style="text-align: left;">
-                                <div style="color: white; font-weight: 500;">Click "New Sale"</div>
-                                <div style="color: #94a3b8; font-size: 12px;">Start the process</div>
-                            </div>
-                        </div>
+                <h3 style="color: var(--accent); margin: 24px 0 12px 0;">🔤 Address Tips</h3>
+                <ul style="margin-left: 20px; line-height: 1.6;">
+                    <li>Type just 2 characters to see suggestions</li>
+                    <li>Use arrow keys to navigate suggestions</li>
+                    <li>Press Enter to select a suggestion</li>
+                    <li>The map will automatically zoom to the address</li>
+                </ul>
 
-                        <div style="display: flex; align-items: center; gap: 12px; background: rgba(60,240,212,0.1); border-radius: 8px; padding: 12px;">
-                            <div style="background: #3cf0d4; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">2</div>
-                            <div style="text-align: left;">
-                                <div style="color: white; font-weight: 500;">Click Map/Building</div>
-                                <div style="color: #94a3b8; font-size: 12px;">Place your sale</div>
-                            </div>
-                        </div>
+                <h3 style="color: var(--accent); margin: 24px 0 12px 0;">📅 Multi-Day Sales</h3>
+                <ul style="margin-left: 20px; line-height: 1.6;">
+                    <li>Check the "Multi-day sale" box</li>
+                    <li>Add different days with different times</li>
+                    <li>Perfect for weekend sales with varying hours</li>
+                </ul>
 
-                        <div style="display: flex; align-items: center; gap: 12px; background: rgba(60,240,212,0.1); border-radius: 8px; padding: 12px;">
-                            <div style="background: #3cf0d4; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">3</div>
-                            <div style="text-align: left;">
-                                <div style="color: white; font-weight: 500;">Fill & Save</div>
-                                <div style="color: #94a3b8; font-size: 12px;">Complete the form</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="text-align: center;">
-                    <div style="font-size: 32px; margin-bottom: 8px;">✨</div>
-                    <h3 style="color: #3cf0d4; margin: 0 0 16px 0;">Premium Features</h3>
-                    
-                    <div style="text-align: left; space-y: 16px;">
-                        <div style="margin-bottom: 16px;">
-                            <h4 style="color: #7c89ff; margin: 0 0 4px 0; font-size: 16px;">🔤 Smart Address Entry</h4>
-                            <p style="color: #94a3b8; font-size: 13px; margin: 0; line-height: 1.4;">
-                                Type just 2 characters and get instant suggestions. Arrow keys to navigate, Enter to select.
-                            </p>
-                            <div style="background: rgba(124,137,255,0.1); border-radius: 4px; padding: 4px 8px; margin-top: 4px; font-family: monospace; font-size: 11px; color: #7c89ff;">
-                                Example: Type "123 ma" → "123 Main St, Portland, TX"
-                            </div>
-                        </div>
-
-                        <div style="margin-bottom: 16px;">
-                            <h4 style="color: #7c89ff; margin: 0 0 4px 0; font-size: 16px;">🏠 Building Click Magic</h4>
-                            <p style="color: #94a3b8; font-size: 13px; margin: 0 0 4px 0; line-height: 1.4;">
-                                Zoom in close, click any building to see its address, then click "Use This Address".
-                            </p>
-                            <div style="color: #10b981; font-size: 12px; font-weight: 500;">
-                                💡 No more typing addresses manually!
-                            </div>
-                        </div>
-
-                        <div>
-                            <h4 style="color: #7c89ff; margin: 0 0 4px 0; font-size: 16px;">📅 Multi-Day Sales</h4>
-                            <p style="color: #94a3b8; font-size: 13px; margin: 0 0 4px 0; line-height: 1.4;">
-                                Check "Multi-day sale" box, add different days with different times. Perfect for weekend sales!
-                            </p>
-                            <div style="background: rgba(124,137,255,0.1); border-radius: 4px; padding: 4px 8px; font-family: monospace; font-size: 11px; color: #7c89ff;">
-                                Friday 7:00 AM - 2:00 PM & Saturday 8:00 AM - 4:00 PM
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <h3 style="color: var(--accent); margin: 24px 0 12px 0;">✏️ Editing</h3>
+                <ul style="margin-left: 20px; line-height: 1.6;">
+                    <li>Click any marker on the map to edit</li>
+                    <li>Update the information and click "Save"</li>
+                    <li>Click "Cancel" to stop editing</li>
+                </ul>
             </div>
-
-            <div style="background: rgba(60,240,212,0.05); border: 1px solid rgba(60,240,212,0.2); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-                <h3 style="color: #3cf0d4; margin: 0 0 16px 0; text-align: center;">📝 Quick Templates</h3>
-                <p style="color: #94a3b8; text-align: center; margin: 0 0 16px 0;">Save time with pre-made templates for common garage sale types:</p>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-                    ${Object.entries(saleTemplates).map(([name, template]) => `
-                        <div style="background: rgba(60,240,212,0.1); border: 1px solid rgba(60,240,212,0.2); border-radius: 8px; padding: 12px; text-align: center;">
-                            <div style="font-size: 20px; margin-bottom: 4px;">${template.icon}</div>
-                            <div style="color: white; font-weight: 500; font-size: 14px; margin-bottom: 2px;">${name}</div>
-                            <div style="color: #94a3b8; font-size: 11px;">${template.time.start}:00 ${template.time.startAmPm} - ${template.time.end}:00 ${template.time.endAmPm}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px;">
-                <div>
-                    <h3 style="color: #3cf0d4; margin: 0 0 12px 0;">🎯 Pro Tips</h3>
-                    
-                    <div style="margin-bottom: 16px;">
-                        <h4 style="color: #f59e0b; margin: 0 0 6px 0; font-size: 16px;">⌨️ Keyboard Shortcuts</h4>
-                        <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px; line-height: 1.5;">
-                            <li>Tab key moves between form fields</li>
-                            <li>Arrow keys navigate address suggestions</li>
-                            <li>Enter selects highlighted suggestion</li>
-                            <li>Escape closes suggestion dropdown</li>
-                        </ul>
-                    </div>
-                    
-                    <div>
-                        <h4 style="color: #f59e0b; margin: 0 0 6px 0; font-size: 16px;">🎨 Interface Tips</h4>
-                        <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px; line-height: 1.5;">
-                            <li>Click theme button for dark/light modes</li>
-                            <li>Zoom to level 16+ to see buildings</li>
-                            <li>Use Hybrid + Roads for best view</li>
-                            <li>Status bar shows connection status</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 style="color: #3cf0d4; margin: 0 0 12px 0;">✅ Best Practices</h3>
-                    
-                    <div style="margin-bottom: 16px;">
-                        <h4 style="color: #10b981; margin: 0 0 6px 0; font-size: 16px;">📍 Location & Timing</h4>
-                        <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px; line-height: 1.5;">
-                            <li>Use exact street addresses</li>
-                            <li>Most sales: 7 AM - 2 PM</li>
-                            <li>Friday-Saturday for multi-day</li>
-                            <li>Verify dates before saving</li>
-                        </ul>
-                    </div>
-                    
-                    <div>
-                        <h4 style="color: #10b981; margin: 0 0 6px 0; font-size: 16px;">🛍️ Items & Descriptions</h4>
-                        <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px; line-height: 1.5;">
-                            <li>List popular items (furniture, clothes)</li>
-                            <li>Mention "everything must go" for moving sales</li>
-                            <li>Include "multi-family" for neighborhood sales</li>
-                            <li>Keep descriptions concise but informative</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            
-            <div style="text-align: center; padding-top: 24px; border-top: 1px solid rgba(100,116,139,0.2);">
-                <button onclick="closeModernGuideModal()" style="background: linear-gradient(135deg, #3cf0d4, #7c89ff); border: none; color: white; padding: 12px 32px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; margin-bottom: 16px;">Got It! Let's Start</button>
-                <div style="color: #64748b; font-size: 14px;">
-                    Professional garage sale management system <br>
-                    <strong style="color: #3cf0d4;">City of Portland, Texas</strong> • Version 8.0 Modern
-                </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; padding: 20px 24px; border-top: 1px solid var(--line);">
+                <button class="close-guide-btn btn" style="background: var(--accent); color: #041311; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Got it!
+                </button>
             </div>
         </div>
     `;
 
     document.body.appendChild(modalBackdrop);
 
-    // Close button handlers - FIXED
-    const closeButtons = modalBackdrop.querySelectorAll('.modern-close-guide-btn, .modern-close-guide-main');
+    // Close button handlers
+    const closeButtons = modalBackdrop.querySelectorAll('.close-guide-btn');
     closeButtons.forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            closeModernGuideModal();
+            closeGuideModal();
         });
     });
 
     // Close on backdrop click
     modalBackdrop.addEventListener('click', function(e) {
         if (e.target === modalBackdrop) {
-            closeModernGuideModal();
+            closeGuideModal();
         }
     });
 
-    window.currentModernGuideModal = modalBackdrop;
+    window.currentGuideModal = modalBackdrop;
 }
 
-function closeModernGuideModal() {
-    if (window.currentModernGuideModal) {
-        document.body.removeChild(window.currentModernGuideModal);
-        window.currentModernGuideModal = null;
+function closeGuideModal() {
+    if (window.currentGuideModal) {
+        document.body.removeChild(window.currentGuideModal);
+        window.currentGuideModal = null;
     }
 }
-
-window.closeModernGuideModal = closeModernGuideModal;
-window.showTemplateSelector = showTemplateSelector;
-window.closeTemplateModal = closeTemplateModal;
 
 function setupNetworkMonitoring() {
     window.addEventListener('online', () => {
         isOnline = true;
         updateConnectionStatus();
         loadGarageSales();
-        showModernToast("🌐 Connection restored", "success");
+        showToast("🌐 Connection restored", "success");
     });
 
     window.addEventListener('offline', () => {
         isOnline = false;
         updateConnectionStatus();
-        showModernToast("⚠️ Connection lost - working offline", "warning");
+        showToast("⚠️ Connection lost - working offline", "warning");
     });
 
     updateConnectionStatus();
 }
 
-/* ================ Modern Premium Initialization ================ */
+/* =============== FIXED Initialization =============== */
 async function init() {
-    console.log("🏛️ Modern Stylish Garage Sale Admin v8.0 - FIXED COORDINATES");
-    console.log("🚀 Initializing premium modern system...");
+    console.log("🏛️ Garage Sale Admin v8.0 - FIXED VERSION");
+    console.log("🚀 Initializing system...");
 
     try {
         const savedTheme = localStorage.getItem('preferred_theme');
@@ -1612,31 +1179,23 @@ async function init() {
         // Set up multi-day functionality
         setupMultiDayFeature();
 
-        // Form handlers with modern touch
+        // Form handlers
         ["timeStartHour", "timeStartMin", "timeStartAmPm", "timeEndHour", "timeEndMin", "timeEndAmPm", "details"]
             .forEach(id => {
                 const el = $("#" + id);
                 if (el) el.addEventListener("change", updateDescriptionPreview);
             });
 
-        // Modern button handlers with enhanced feedback
+        // FIXED: Button handlers without template selector
         const btnNew = $("#btnNew");
         if (btnNew) {
-            btnNew.addEventListener("click", () => {
-                enterAddMode();
-                // Show template selector option
-                setTimeout(() => {
-                    if (confirm("Would you like to start with a template?")) {
-                        showTemplateSelector();
-                    }
-                }, 1000);
-            });
+            btnNew.addEventListener("click", enterAddMode);
         }
 
         $("#btnSave")?.addEventListener("click", onSave);
         $("#btnCancel")?.addEventListener("click", cancelEditing);
         $("#btnTheme")?.addEventListener("click", cycleTheme);
-        $("#btnGuide")?.addEventListener("click", showModernGuide);
+        $("#btnGuide")?.addEventListener("click", showGuide);
 
         // Enhanced address search
         $("#btnSearch")?.addEventListener("click", () => {
@@ -1644,32 +1203,33 @@ async function init() {
             if (address && addressSuggestions.length > 0) {
                 selectSuggestion(addressSuggestions[0].text, addressSuggestions[0].magicKey, $("#addressSearch"));
             } else if (address) {
-                showModernToast("💡 Try the autocomplete suggestions for better results", "info");
+                showToast("💡 Try the autocomplete suggestions for better results", "info");
             }
         });
 
         updateDescriptionPreview();
 
-        console.log("✅ Modern premium system ready with FIXED COORDINATES!");
-        setModernStatus("🎉 Premium modern system ready! All enhanced features enabled.", 'success');
+        console.log("✅ System ready - FIXED VERSION!");
+        setStatus("🎉 System ready! All features enabled.", 'success');
 
         // Welcome message
         setTimeout(() => {
-            showModernToast("🏛️ Welcome to the premium garage sale management system!", "info", 5000);
+            showToast("🏛️ Welcome to the garage sale management system!", "info", 5000);
         }, 1000);
 
     } catch (error) {
-        console.error("❌ Modern initialization failed:", error);
-        setModernStatus("System failed to start. Please refresh.", 'error');
+        console.error("❌ Initialization failed:", error);
+        setStatus("System failed to start. Please refresh.", 'error');
     }
 }
 
 window.addEventListener('error', (event) => {
-    console.error("💥 Modern error:", event.error);
+    console.error("💥 Error:", event.error);
 });
 
-// Replace traditional functions with modern equivalents
-window.toast = showModernToast;
-window.setStatus = setModernStatus;
+// Set up global functions
+window.showToast = showToast;
+window.setStatus = setStatus;
+window.closeGuideModal = closeGuideModal;
 
-console.log("🚀 Modern Stylish Garage Sale Admin loaded with premium features and FIXED COORDINATES!");
+console.log("🚀 Garage Sale Admin loaded - FIXED VERSION with working buttons and clean design!");
